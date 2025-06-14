@@ -1,0 +1,233 @@
+/**
+ * Estilos para el mu00f3dulo de notificaciones
+ *
+ * @package WP-POS
+ * @subpackage Notifications
+ * @since 1.0.0
+ */
+
+/* Contenedor principal de notificaciones */
+.wp-pos-notifications-container {
+    position: fixed;
+    top: 32px;
+    right: 20px;
+    z-index: 9999;
+    width: 350px;
+    max-width: 90vw;
+}
+
+/* Estilo base de notificaciu00f3n */
+.wp-pos-notification {
+    margin-bottom: 10px;
+    padding: 12px 15px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    position: relative;
+    animation: wp-pos-notification-in 0.3s ease;
+    overflow: hidden;
+}
+
+/* Animaciu00f3n de entrada */
+@keyframes wp-pos-notification-in {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Animaciu00f3n de salida */
+@keyframes wp-pos-notification-out {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+}
+
+.wp-pos-notification.wp-pos-notification-removing {
+    animation: wp-pos-notification-out 0.3s ease forwards;
+}
+
+/* Estilos de contenido */
+.wp-pos-notification-content {
+    display: flex;
+    align-items: flex-start;
+}
+
+.wp-pos-notification-icon {
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.wp-pos-notification-icon .dashicons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+.wp-pos-notification-message {
+    flex-grow: 1;
+}
+
+.wp-pos-notification-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.wp-pos-notification-text {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Botu00f3n para cerrar */
+.wp-pos-notification-dismiss {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.wp-pos-notification-dismiss:hover {
+    opacity: 1;
+}
+
+.wp-pos-notification-dismiss .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Tipos de notificaciones */
+.wp-pos-notification-success {
+    background-color: #ecf9f0;
+    border-left: 4px solid #2ecc71;
+}
+
+.wp-pos-notification-success .wp-pos-notification-icon .dashicons {
+    color: #2ecc71;
+}
+
+.wp-pos-notification-info {
+    background-color: #e6f3ff;
+    border-left: 4px solid #3498db;
+}
+
+.wp-pos-notification-info .wp-pos-notification-icon .dashicons {
+    color: #3498db;
+}
+
+.wp-pos-notification-warning {
+    background-color: #fef7e9;
+    border-left: 4px solid #f39c12;
+}
+
+.wp-pos-notification-warning .wp-pos-notification-icon .dashicons {
+    color: #f39c12;
+}
+
+.wp-pos-notification-error {
+    background-color: #feebe9;
+    border-left: 4px solid #e74c3c;
+}
+
+.wp-pos-notification-error .wp-pos-notification-icon .dashicons {
+    color: #e74c3c;
+}
+
+/* Estilos para listado de notificaciones */
+.wp-pos-notifications-list {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    overflow: hidden;
+}
+
+.wp-pos-notification-list-item {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: flex-start;
+}
+
+.wp-pos-notification-list-item:last-child {
+    border-bottom: none;
+}
+
+.wp-pos-notification-list-item .wp-pos-notification-icon {
+    margin-right: 15px;
+}
+
+.wp-pos-notification-list-item .wp-pos-notification-title {
+    margin-bottom: 5px;
+    font-size: 15px;
+}
+
+.wp-pos-notification-list-item .wp-pos-notification-text {
+    margin-bottom: 10px;
+}
+
+.wp-pos-notification-list-item .wp-pos-notification-meta {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.wp-pos-no-notifications {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.wp-pos-no-notifications .dashicons {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #2ecc71;
+    margin-bottom: 15px;
+}
+
+/* Stock warning en la pu00e1gina de ventas */
+.wp-pos-stock-warning {
+    background-color: #feefe3;
+    border-left: 4px solid #e74c3c;
+    color: #c0392b;
+    padding: 8px 12px;
+    margin-top: 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    font-size: 13px;
+}
+
+.wp-pos-stock-warning .dashicons {
+    color: #e74c3c;
+    margin-right: 8px;
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+}
+
+.wp-pos-low-stock-row {
+    background-color: rgba(231, 76, 60, 0.05);
+}
+
+.wp-pos-stock-info {
+    background: #f7f9fc;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 10px;
+    font-size: 12px;
+    color: #555;
+}

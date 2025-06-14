@@ -1,0 +1,31 @@
+# WordPress
+wp-config.php
+wp-content/debug.log
+
+# Entorno local
+.env
+*.log
+
+# Dependencias
+node_modules/
+vendor/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de IDE
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Archivos temporales
+*.swp
+*~
+*.bak
+
+# Archivos de entorno
+.env.local
+.env.development
+.env.production

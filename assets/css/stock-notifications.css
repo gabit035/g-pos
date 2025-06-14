@@ -1,0 +1,90 @@
+/* Estilos para notificaciones de stock bajo */
+
+.wp-pos-stock-alert {
+    border: 2px solid #e74c3c;
+    border-radius: 6px;
+    margin: 20px 0;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.wp-pos-stock-alert-header {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.wp-pos-stock-alert-title {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.wp-pos-stock-alert-title .dashicons {
+    margin-right: 8px;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.wp-pos-stock-alert-body {
+    padding: 15px;
+}
+
+.wp-pos-stock-products {
+    margin-top: 10px;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.wp-pos-stock-products th {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+    background-color: #f5f5f5;
+}
+
+.wp-pos-stock-products td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.wp-pos-stock-products .stock-count {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.wp-pos-stock-actions {
+    margin-top: 15px;
+    text-align: right;
+}
+
+.wp-pos-all-products-btn {
+    display: inline-block;
+    padding: 8px 15px;
+    background-color: #3498db;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.wp-pos-all-products-btn:hover {
+    background-color: #2980b9;
+    color: white;
+}
+
+/* Estilo para productos sin stock bajo */
+.wp-pos-no-stock-issues {
+    padding: 15px;
+    text-align: center;
+    color: #2ecc71;
+    font-weight: bold;
+}

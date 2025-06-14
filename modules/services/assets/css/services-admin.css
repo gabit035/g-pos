@@ -1,0 +1,227 @@
+/* Services Admin Styles: replicate Products UI with own CSS */
+
+/* Using default WP admin wrap classes, no custom wrapper rules needed */
+
+/* Container to constrain width and add vertical margin */
+.wp-pos-services-container {
+    margin: 20px auto;
+    max-width: 1200px;
+}
+
+/* Header */
+.wp-pos-services-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 30px;
+    background: linear-gradient(135deg, #3a6186, #89253e);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Title styling */
+.wp-pos-services-header-primary h1 {
+    margin: 0 0 5px;
+    font-size: 1.8em;
+    color: #fff;
+}
+
+/* description text */
+.wp-pos-services-header-primary p {
+    margin: 0;
+    color: #f0f0f0;
+}
+
+/* Add button */
+.wp-pos-add-service {
+    display: inline-flex;
+    align-items: center;
+    background: #0073aa;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 3px;
+    text-decoration: none;
+    font-weight: 500;
+}
+.wp-pos-add-service .dashicons {
+    margin-right: 6px;
+    font-size: 20px;
+}
+
+/* Filters card */
+.wp-pos-filters-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+.wp-pos-filters-card-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+}
+.wp-pos-filters-card-body {
+    padding: 15px;
+}
+.wp-pos-filters-form {
+    display: flex;
+    gap: 10px;
+}
+
+/* --- Servicios List Card Styling --- */
+.wp-pos-services-card {
+    background: #fff;
+    border: 1px solid #e2e4e7;
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+.wp-pos-services-card-header {
+    background-color: #f9f9f9;
+    padding: 12px 15px;
+    border-bottom: 1px solid #e2e4e7;
+}
+.wp-pos-services-card-header h3 {
+    margin: 0;
+    font-weight: 600;
+}
+.wp-pos-services-card-body {
+    padding: 15px;
+}
+
+/* Bulk actions area */
+.tablenav.top {
+    margin-bottom: 15px;
+}
+.alignleft.actions select,
+.alignleft.actions .button {
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+/* Table styling */
+.wp-pos-services-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 20px;
+    background-color: #fff;
+    border: 1px solid #e2e4e7;
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+}
+.wp-pos-services-table th,
+.wp-pos-services-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e2e4e7;
+}
+.wp-pos-services-table th {
+    background-color: #f9f9f9;
+    font-weight: 600;
+}
+.wp-pos-services-table tr:hover {
+    background-color: #f5f5f5;
+}
+/* Checkbox column width */
+.wp-pos-services-table .check-column {
+    width: 40px;
+}
+
+/* Action links */
+.wp-pos-services-table a {
+    color: #0073aa;
+    text-decoration: none;
+}
+.wp-pos-services-table a:hover {
+    text-decoration: underline;
+}
+
+/* Dashboard cards */
+.wp-pos-dashboard-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+.wp-pos-dashboard-card-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid #ddd;
+}
+.wp-pos-dashboard-card-title {
+    font-size: 18px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+.wp-pos-dashboard-card-title .dashicons {
+    margin-right: 8px;
+    font-size: 18px;
+}
+.wp-pos-dashboard-card-body {
+    padding: 12px;
+}
+
+/* Publish box */
+.submitbox {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 20px;
+    padding: 10px;
+}
+.submitbox .misc-publishing-actions {
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+}
+.primary.wp-pos-action-button {
+    background: #0073aa;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
+    font-weight: 500;
+    cursor: pointer;
+}
+.primary.wp-pos-action-button .dashicons {
+    margin-right: 6px;
+}
+
+/* Form fields */
+.form-table th {
+    font-weight: 500;
+    color: #333;
+    width: 150px;
+    padding: 8px;
+}
+.form-table input,
+.form-table textarea,
+.wp-pos-filter-button,
+select[name="bulk_action"] {
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 6px 10px;
+}
+
+/* Pagination */
+.tablenav-pages .page-numbers {
+    margin: 0 3px;
+    padding: 6px 10px;
+    background: #f1f1f1;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    text-decoration: none;
+    color: #333;
+}
+.tablenav-pages .current {
+    background: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+}
+
+/* You can add custom overrides below if needed */
+#wppos-services-app {
+    margin-top: 20px;
+}

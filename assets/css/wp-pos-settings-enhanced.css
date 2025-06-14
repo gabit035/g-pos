@@ -1,0 +1,250 @@
+/**
+ * Estilos mejorados para la página de configuración
+ *
+ * @package WP-POS
+ * @since 1.0.0
+ */
+
+/* Encabezado de la página */
+.wp-pos-settings-header {
+    background: linear-gradient(135deg, #304352 0%, #6a3093 100%);
+    border-radius: 8px;
+    padding: 30px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wp-pos-settings-header-primary {
+    color: #fff;
+}
+
+.wp-pos-settings-header-primary h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+    color: #fff;
+}
+
+.wp-pos-settings-header-primary p {
+    font-size: 14px;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.wp-pos-control-panel-secondary {
+    display: flex;
+}
+
+.wp-pos-back-button {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.wp-pos-back-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.wp-pos-back-button .dashicons {
+    margin-right: 8px;
+}
+
+/* Estructura principal */
+.wp-pos-settings-wrapper {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+/* Pestañas de configuración */
+.wp-pos-tabs-nav {
+    display: flex;
+    list-style: none;
+    margin: 0 0 30px 0;
+    padding: 0;
+    border-bottom: 1px solid rgba(106, 48, 147, 0.15);
+    overflow: hidden;
+    border-radius: 6px 6px 0 0;
+    background: linear-gradient(to bottom, #fafafa 0%, #f5f5f5 100%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.wp-pos-tabs-nav li {
+    margin: 0;
+    position: relative;
+}
+
+.wp-pos-tabs-nav a {
+    display: flex;
+    align-items: center;
+    padding: 15px 25px;
+    text-decoration: none;
+    color: #4a4a4a;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.wp-pos-tabs-nav a:hover {
+    color: #6a3093;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.wp-pos-tabs-nav li.active a {
+    color: #6a3093;
+    background: white;
+    box-shadow: 0 0 15px rgba(106, 48, 147, 0.08);
+}
+
+.wp-pos-tabs-nav li.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6a3093 0%, #574986 100%);
+    z-index: 2;
+}
+
+.wp-pos-tabs-nav .dashicons {
+    margin-right: 8px;
+}
+
+/* Contenido de las pestañas */
+.wp-pos-tab-pane {
+    display: none;
+    padding: 0 20px;
+}
+
+.wp-pos-tab-pane.active {
+    display: block;
+}
+
+.wp-pos-tab-pane h3 {
+    margin-top: 30px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #23282d;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* Formularios */
+.form-table th {
+    font-weight: 600;
+    color: #3c3c3c;
+    width: 200px;
+    padding: 20px 10px 20px 0;
+}
+
+.form-table td {
+    padding-top: 15px;
+    padding-bottom: 15px;
+    vertical-align: middle;
+}
+
+/* Estilos para los mensajes de notificaciu00f3n */
+#wp-pos-settings-message {
+    margin: 0 0 20px 0;
+    padding: 10px 15px;
+    border-radius: 4px;
+    border-left: 4px solid transparent;
+}
+
+#wp-pos-settings-message.notice-success {
+    background-color: #f0f8f0;
+    border-left-color: #46b450;
+    color: #2c7636;
+}
+
+#wp-pos-settings-message.notice-error {
+    background-color: #fdf1f1;
+    border-left-color: #dc3232;
+    color: #b02727;
+}
+
+#wp-pos-settings-message p {
+    margin: 0.5em 0;
+    padding: 0;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="number"],
+textarea,
+select {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+    transition: border-color 0.3s;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+    border-color: #7b4397;
+    box-shadow: 0 0 0 1px #7b4397;
+    outline: none;
+}
+
+/* Botón de guardar */
+.wp-pos-save-button {
+    background: linear-gradient(135deg, #6a3093 0%, #5b548a 100%);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 25px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.wp-pos-save-button:hover {
+    background: linear-gradient(135deg, #7b4397 0%, #6a3093 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Estilos para los checkboxes */
+input[type="checkbox"] {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+/* Descripción de campos */
+.description {
+    color: #666;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+/* Panel de submit */
+.wp-pos-submit-panel {
+    background: #f9f9f9;
+    border-top: 1px solid #e2e2e2;
+    margin: 30px -20px -20px -20px;
+    padding: 20px;
+    text-align: right;
+}

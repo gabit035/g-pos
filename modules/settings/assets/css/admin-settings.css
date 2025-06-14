@@ -1,0 +1,175 @@
+/**
+ * Estilos para la página de configuraciones de WP-POS
+ *
+ * @package WP-POS
+ * @subpackage Settings
+ * @since 1.0.0
+ */
+
+/* Contenedor principal */
+.wp-pos-settings-page {
+    max-width: 1200px;
+    margin: 20px 0;
+}
+
+/* Pestañas de navegación */
+.wp-pos-settings-page .nav-tab {
+    display: flex;
+    align-items: center;
+}
+
+.wp-pos-settings-page .nav-tab .dashicons {
+    margin-right: 5px;
+}
+
+/* Secciones */
+.wp-pos-section-description {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* Campos */
+.wp-pos-field-wrapper {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.wp-pos-field-wrapper:last-child {
+    border-bottom: none;
+}
+
+.wp-pos-field-wrapper p.description {
+    margin-top: 5px;
+    font-style: italic;
+    color: #666;
+}
+
+/* Campo checkbox */
+.wp-pos-field-checkbox label {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Campo select */
+.wp-pos-field-select select {
+    min-width: 250px;
+}
+
+/* Campo color */
+.wp-pos-field-color .wp-color-result {
+    margin-bottom: 0;
+}
+
+/* Campo file */
+.wp-pos-file-upload {
+    display: flex;
+    align-items: center;
+}
+
+.wp-pos-file-upload input[type="text"] {
+    margin-right: 10px;
+}
+
+/* Campo imagen */
+.wp-pos-image-upload {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.wp-pos-image-preview {
+    margin-bottom: 10px;
+    max-width: 200px;
+    border: 1px solid #ddd;
+    padding: 5px;
+    background: #f9f9f9;
+}
+
+.wp-pos-image-preview img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.wp-pos-image-upload button {
+    margin-right: 5px;
+}
+
+/* Editor de código */
+.wp-pos-code-editor-wrapper {
+    border: 1px solid #ddd;
+    background: #f9f9f9;
+}
+
+.wp-pos-code-editor {
+    font-family: monospace;
+    width: 100%;
+    resize: vertical;
+}
+
+/* Campo HTML personalizado */
+.wp-pos-field-html {
+    margin-top: 10px;
+}
+
+/* Campos condicionales */
+.wp-pos-field-conditional {
+    display: none; /* Por defecto ocultos hasta que JS los muestre */
+}
+
+/* Estilo de impresión de recibos */
+.wp-pos-receipt {
+    font-family: 'Courier New', monospace;
+    max-width: 80mm;
+    margin: 0 auto;
+    padding: 10px;
+    background: white;
+    color: black;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.wp-pos-receipt-header,
+.wp-pos-receipt-footer {
+    text-align: center;
+    margin: 10px 0;
+}
+
+.wp-pos-receipt-header h1 {
+    font-size: 16px;
+    margin: 5px 0;
+}
+
+.wp-pos-receipt-info,
+.wp-pos-receipt-totals,
+.wp-pos-receipt-payment {
+    text-align: left;
+    margin: 10px 0;
+}
+
+.wp-pos-receipt-items table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+}
+
+.wp-pos-receipt-items th,
+.wp-pos-receipt-items td {
+    padding: 3px;
+    text-align: left;
+    font-size: 11px;
+}
+
+.wp-pos-receipt-total {
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+.wp-pos-receipt-footer {
+    margin-top: 20px;
+    border-top: 1px dashed #aaa;
+    padding-top: 10px;
+}

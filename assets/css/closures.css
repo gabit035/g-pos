@@ -1,0 +1,158 @@
+/* Estilos para la interfaz de cierres acorde al dashboard */
+.wp-pos-closures-page {
+    --wp-pos-gradient-from: #2271b1;
+    --wp-pos-gradient-to: #135e96;
+}
+.wp-pos-closures-page .wp-pos-form-card-header {
+    background: linear-gradient(135deg, var(--wp-pos-gradient-from), var(--wp-pos-gradient-to));
+    color: #fff;
+    display: flex;
+    align-items: center;
+}
+.wp-pos-closures-page .wp-pos-form-card-header .dashicons {
+    margin-right: 8px;
+    font-size: 24px;
+}
+.wp-pos-closures-page .wp-pos-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+.wp-pos-closures-page .wp-pos-summary-item {
+    background: #fff;
+    border: 1px solid #e2e4e7;
+    border-radius: 4px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.wp-pos-closures-page .wp-pos-summary-item .dashicons {
+    font-size: 32px;
+    margin-bottom: 8px;
+    color: var(--wp-pos-gradient-from);
+}
+.wp-pos-closures-page .wp-pos-summary-title {
+    font-size: 14px;
+    color: #646970;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+.wp-pos-closures-page .wp-pos-summary-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2271b1;
+}
+/* Form actions */
+.wp-pos-closures-page .wp-pos-form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+.wp-pos-closures-page .wp-pos-button {
+    border-radius: 4px;
+    font-size: 14px;
+    padding: 8px 16px;
+}
+.wp-pos-closures-page .wp-pos-button-primary {
+    background: var(--wp-pos-gradient-from);
+    border-color: var(--wp-pos-gradient-to);
+    color: #fff;
+}
+
+/* Estilos específicos para página de cierres */
+.wp-pos-closures-page .wp-pos-form-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+.wp-pos-closures-page .wp-pos-summary-list,
+.wp-pos-closures-page .wp-pos-breakdown-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.wp-pos-closures-page .wp-pos-summary-list li,
+.wp-pos-closures-page .wp-pos-breakdown-list li {
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+}
+.wp-pos-closures-page .wp-pos-breakdown-total {
+    font-weight: bold;
+    margin-top: 8px;
+}
+
+/* Estilos para registro de cierre */
+.wp-pos-closure-register .wp-pos-form-card-body form#wp-pos-register-form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+.wp-pos-closure-register .wp-pos-form-card-body form#wp-pos-register-form p {
+    margin: 0;
+}
+.wp-pos-closure-register .wp-pos-form-card-body form#wp-pos-register-form label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: #333;
+}
+.wp-pos-closure-register .wp-pos-form-card-body form#wp-pos-register-form input[type="number"],
+.wp-pos-closure-register .wp-pos-form-card-body form#wp-pos-register-form input[type="text"],
+.wp-pos-closure-register .wp-pos-form-card-body form#wp-pos-register-form input[type="date"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+.wp-pos-closure-register .wp-pos-form-card-body form#wp-pos-register-form p:last-child {
+    grid-column: span 2;
+    text-align: right;
+}
+/* Header gradient para formulario de registro */
+.wp-pos-closure-register .wp-pos-form-card-header {
+    background: linear-gradient(135deg, #3a6186, #89253e);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 4px 4px 0 0;
+}
+/* Header gradient para otras tabs: Histórico y Overview */
+.wp-pos-closures-history .wp-pos-form-card-header,
+.wp-pos-closures-overview .wp-pos-form-card-header {
+    background: linear-gradient(135deg, #3a6186, #89253e);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 4px 4px 0 0;
+}
+/* Mejor contraste del botón Guardar */
+.wp-pos-closure-register .wp-pos-form-card-body .button-primary {
+    background-color: var(--wp-pos-gradient-from);
+    border-color: var(--wp-pos-gradient-to);
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+}
+
+/* Ajustes del contenedor principal de Admin */
+#wpbody-content {
+    width: 1200px;
+    overflow: visible;
+    margin: 0 auto;
+    padding-top: 40px;
+    float: none !important;
+}
+
+/* Títulos en cabecera de formularios */
+.wp-pos-form-card-header h2 {
+    color: #FFFFFF;
+    margin: 0;
+    font-size: 1.25rem;
+}

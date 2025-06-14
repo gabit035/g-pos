@@ -1,0 +1,1818 @@
+/**
+ * Estilos principales para la administración del plugin WP-POS
+ *
+ * @package WP-POS
+ * @since 1.0.0
+ */
+
+/* Normalize y reset */
+.wp-pos-wrapper * {
+    box-sizing: border-box;
+}
+
+/* Estilos generales */
+.wp-pos-wrapper {
+    margin: 20px 0;
+    max-width: 1200px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    color: #444;
+    line-height: 1.4;
+}
+
+.wp-pos-wrapper h1 {
+    margin-bottom: 20px;
+    color: #23282d;
+    font-weight: 600;
+    font-size: 23px;
+    line-height: 1.3;
+}
+
+.wp-pos-wrapper h2 {
+    margin-top: 1.2em;
+    margin-bottom: 0.75em;
+    color: #23282d;
+    font-size: 1.7em;
+    font-weight: 500;
+}
+
+.wp-pos-wrapper h3 {
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+    color: #23282d;
+    font-size: 1.4em;
+    font-weight: 500;
+}
+
+/* Contenedor principal del dashboard */
+.wp-pos-dashboard-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Cards y elementos con sombra */
+.wp-pos-card {
+    background: #fff;
+    border: 1px solid #e2e4e7;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    margin-bottom: 20px;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.wp-pos-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Header del dashboard con información general */
+.wp-pos-dashboard-welcome {
+    background: linear-gradient(to right, #2271b1, #135e96);
+    color: #fff;
+    border-radius: 4px;
+    padding: 30px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wp-pos-dashboard-welcome h2 {
+    color: #fff;
+    margin-top: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.wp-pos-dashboard-welcome p {
+    font-size: 16px;
+    max-width: 80%;
+    margin-bottom: 0;
+    opacity: 0.9;
+}
+
+.wp-pos-dashboard-welcome::after {
+    content: "\f513";
+    font-family: dashicons;
+    position: absolute;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 80px;
+    opacity: 0.2;
+}
+
+/* Estadísticas */
+.wp-pos-dashboard-stats {
+    margin-top: 10px;
+}
+
+.wp-pos-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.wp-pos-stat-box {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 20px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+}
+
+.wp-pos-stat-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.wp-pos-stat-title {
+    font-size: 16px;
+    color: #646970;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.wp-pos-stat-value {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.wp-pos-stat-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 36px;
+    opacity: 0.2;
+}
+
+.wp-pos-stat-footer {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #646970;
+}
+
+/* Accesos rápidos */
+.wp-pos-dashboard-quick-links {
+    margin-top: 10px;
+}
+
+.wp-pos-dashboard-quick-links h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.wp-pos-quick-links-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 15px;
+}
+
+.wp-pos-quick-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: #fff;
+    padding: 24px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #2271b1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.wp-pos-quick-link:hover {
+    background-color: #f0f6fc;
+    color: #135e96;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-3px);
+}
+
+.wp-pos-quick-link .dashicons {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+    margin-bottom: 10px;
+}
+
+.wp-pos-quick-link-text {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* Sección de actividad reciente */
+.wp-pos-dashboard-recent {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 960px) {
+    .wp-pos-dashboard-recent {
+        grid-template-columns: 1fr;
+    }
+}
+
+.wp-pos-recent-sales,
+.wp-pos-recent-activity {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 20px;
+}
+
+.wp-pos-recent-sales h3,
+.wp-pos-recent-activity h3 {
+    margin-top: 0;
+    border-bottom: 1px solid #e5e5e5;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #3c434a;
+}
+
+/* Tablas mejoradas */
+.wp-pos-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.wp-pos-table th {
+    text-align: left;
+    padding: 10px 15px;
+    font-weight: 600;
+    border-bottom: 1px solid #e2e4e7;
+    color: #3c434a;
+    background: #f8f9fa;
+}
+
+.wp-pos-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f1;
+    vertical-align: middle;
+}
+
+.wp-pos-table tr:hover td {
+    background-color: #f6f7f7;
+}
+
+/* Menú de navegación */
+.wp-pos-nav {
+    background: #fff;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    padding: 10px 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e4e7;
+}
+
+.wp-pos-nav a {
+    display: inline-block;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #2271b1;
+    background-color: transparent;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.wp-pos-nav a:hover {
+    background-color: #f0f6fc;
+    color: #135e96;
+}
+
+.wp-pos-nav a.active {
+    background-color: #2271b1;
+    color: #fff;
+}
+
+/* Filtros de búsqueda y selección */
+.wp-pos-filters {
+    background: #fff;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e4e7;
+}
+
+.wp-pos-filters .filter-item {
+    flex: 1;
+    min-width: 200px;
+}
+
+.wp-pos-filters label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #3c434a;
+    font-size: 13px;
+}
+
+.wp-pos-filters select,
+.wp-pos-filters input[type="text"],
+.wp-pos-filters input[type="date"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #fff;
+    transition: border-color 0.2s ease;
+}
+
+.wp-pos-filters select:focus,
+.wp-pos-filters input[type="text"]:focus,
+.wp-pos-filters input[type="date"]:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+
+.wp-pos-filters .filter-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Botones principales */
+.wp-pos-button {
+    display: inline-block;
+    padding: 8px 15px;
+    border-radius: 4px;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+
+.wp-pos-button-primary {
+    background-color: #2271b1;
+    color: #fff;
+    border-color: #2271b1;
+}
+
+.wp-pos-button-primary:hover {
+    background-color: #135e96;
+    border-color: #135e96;
+}
+
+.wp-pos-button-secondary {
+    background-color: #f6f7f7;
+    color: #3c434a;
+    border-color: #dcdcde;
+}
+
+.wp-pos-button-secondary:hover {
+    background-color: #f0f0f1;
+    border-color: #c5c5c7;
+}
+
+.wp-pos-button-danger {
+    background-color: #d63638;
+    color: #fff;
+    border-color: #d63638;
+}
+
+.wp-pos-button-danger:hover {
+    background-color: #b32d2e;
+    border-color: #b32d2e;
+}
+
+/* Compatibilidad con WooCommerce */
+.wp-pos-woo-notice {
+    background-color: #f6f7f7;
+    border-left: 4px solid #2271b1;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: 0 4px 4px 0;
+    display: flex;
+    align-items: center;
+}
+
+.wp-pos-woo-notice .dashicons {
+    font-size: 24px;
+    margin-right: 10px;
+    color: #2271b1;
+}
+
+/* Indicadores de estado */
+.wp-pos-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.wp-pos-status-completed {
+    background-color: #edfaef;
+    color: #2e7d32;
+}
+
+.wp-pos-status-pending {
+    background-color: #fff8e5;
+    color: #f57c00;
+}
+
+.wp-pos-status-processing {
+    background-color: #e6f7ff;
+    color: #0288d1;
+}
+
+.wp-pos-status-cancelled {
+    background-color: #fbeaea;
+    color: #c62828;
+}
+
+.wp-pos-status-refunded {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+/* Mensajes de notificación */
+.wp-pos-notice-box {
+    padding: 15px;
+    margin: 15px 0;
+    background-color: #ffffff;
+    border-left: 4px solid #2271b1;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    position: relative;
+    border-radius: 0 3px 3px 0;
+}
+
+.wp-pos-notice-box.success {
+    border-left-color: #46b450;
+}
+
+.wp-pos-notice-box.error {
+    border-left-color: #dc3232;
+}
+
+.wp-pos-notice-box.warning {
+    border-left-color: #ffb900;
+}
+
+.wp-pos-notice-box.info {
+    border-left-color: #00a0d2;
+}
+
+.wp-pos-notice-box p {
+    margin: 0;
+    padding: 0;
+}
+
+/* Sidebar del plugin */
+.wp-pos-admin-sidebar {
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.wp-pos-admin-sidebar h3 {
+    margin-top: 0;
+    border-bottom: 1px solid #e5e5e5;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #3c434a;
+}
+
+.wp-pos-admin-sidebar ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wp-pos-admin-sidebar li {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+/* Estilos base del área de administración */
+#wpcontent {
+    padding-left: 0 !important;
+    background: #f0f0f1;
+    min-height: calc(100vh - 32px); /* Asegurar que ocupe toda la altura */
+}
+
+#wpbody {
+    padding: 0;
+    margin: 0;
+}
+
+#wpbody-content {
+    padding: 20px;
+    padding-bottom: 65px; /* Espacio para el footer */
+    box-sizing: border-box;
+    min-height: 100%;
+}
+
+/* Estilos para el contenedor principal */
+.wp-pos-admin-wrapper {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1d2327;
+}
+
+/* Estilos para el encabezado principal */
+.wp-pos-admin-header {
+    background: #fff;
+    border-bottom: 1px solid #dcdcde;
+    padding: 20px;
+    margin: -20px -20px 20px -20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.wp-pos-admin-header h1 {
+    font-size: 23px;
+    font-weight: 400;
+    line-height: 1.3;
+    margin: 0;
+    padding: 0;
+    color: #1d2327;
+}
+
+/* Estilos para el panel de contenido */
+.wp-pos-content-panel {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+/* Estilos para las columnas del formulario */
+.wp-pos-form-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;
+}
+
+.wp-pos-form-column {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Estilos para las tarjetas de formulario */
+.wp-pos-form-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.wp-pos-form-card-header {
+    background: #f6f7f7;
+    border-bottom: 1px solid #dcdcde;
+    padding: 15px 20px;
+}
+
+.wp-pos-form-card-header h3 {
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.wp-pos-form-card-body {
+    padding: 20px;
+}
+
+/* Estilos para formularios */
+.wp-pos-form-group {
+    margin-bottom: 15px;
+}
+
+.wp-pos-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #1d2327;
+}
+
+.wp-pos-form-control {
+    width: 100%;
+    max-width: 400px;
+    padding: 6px 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1d2327;
+    background-color: #fff;
+    background-image: none;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    box-shadow: 0 0 0 transparent;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.wp-pos-form-control:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: 2px solid transparent;
+}
+
+/* Estilos para botones */
+.wp-pos-btn {
+    display: inline-block;
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 2.15384615;
+    min-height: 30px;
+    margin: 0;
+    padding: 0 10px;
+    cursor: pointer;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 3px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.wp-pos-btn-primary {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+    text-shadow: none;
+}
+
+.wp-pos-btn-primary:hover {
+    background: #135e96;
+    border-color: #135e96;
+    color: #fff;
+}
+
+/* Estilos para tablas */
+.wp-pos-table-container {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.wp-pos-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 1.5em;
+    border: 1px solid #dcdcde;
+    background: #fff;
+}
+
+.wp-pos-table th,
+.wp-pos-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #dcdcde;
+    vertical-align: middle;
+}
+
+.wp-pos-table th {
+    background: #f6f7f7;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.wp-pos-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Estilos para mensajes */
+.wp-pos-notice {
+    padding: 12px 15px;
+    margin: 0 0 20px 0;
+    border-left: 4px solid #72aee6;
+    background: #f0f6fc;
+    border-radius: 4px;
+}
+
+.wp-pos-notice.warning {
+    border-left-color: #dba617;
+    background: #f8f3e5;
+}
+
+.wp-pos-notice.error {
+    border-left-color: #d63638;
+    background: #f7e5e5;
+}
+
+.wp-pos-notice.success {
+    border-left-color: #00a32a;
+    background: #edfaef;
+}
+
+/* Estilos para el pie de página */
+.wp-pos-admin-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #f6f7f7;
+    border-top: 1px solid #dcdcde;
+    padding: 15px 20px;
+    text-align: right;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Estilos responsivos */
+@media screen and (max-width: 782px) {
+    .wp-pos-form-columns {
+        flex-direction: column;
+    }
+    
+    .wp-pos-form-column {
+        width: 100%;
+    }
+    
+    .wp-pos-admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .wp-pos-admin-actions {
+        width: 100%;
+    }
+}
+
+/* Estilos para la página de reportes */
+.wp-pos-reports-wrapper {
+    max-width: 100%;
+    margin: 20px 0;
+    background: #fff;
+    padding: 20px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.wp-pos-control-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 0 24px 0;
+    padding: 0 0 20px 0;
+    border-bottom: 1px solid #dcdcde;
+}
+
+/* Estilos para el encabezado de WordPress */
+.wrap h1.wp-heading-inline {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    font-size: 23px;
+    font-weight: 400;
+    line-height: 1.3;
+    margin-right: 10px;
+}
+
+.wrap .page-title-action {
+    margin-left: 4px;
+    padding: 4px 8px;
+    position: relative;
+    top: -3px;
+    text-decoration: none;
+    border: 1px solid #2271b1;
+    border-radius: 2px;
+    text-shadow: none;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: normal;
+    color: #2271b1;
+    background: #f6f7f7;
+    cursor: pointer;
+}
+
+.wrap .page-title-action:hover {
+    background: #f0f0f1;
+}
+
+/* Estilos para pestañas de navegación */
+.nav-tab-wrapper {
+    border-bottom: 1px solid #c3c4c7;
+    margin-bottom: 20px;
+    padding-top: 9px;
+    padding-bottom: 0;
+    line-height: 1.3;
+}
+
+.nav-tab {
+    background: #dcdcde;
+    border: 1px solid #c3c4c7;
+    margin-left: 0.5em;
+    padding: 5px 15px;
+    font-size: 14px;
+    line-height: 1.71428571;
+    font-weight: 500;
+    color: #1d2327;
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    margin-bottom: -1px;
+}
+
+.nav-tab-active {
+    background: #f0f0f1;
+    border-bottom: 1px solid #f0f0f1;
+    margin-bottom: -1px;
+    color: #1d2327;
+}
+
+/* Estilos para formularios */
+.form-table {
+    margin-top: 0;
+    margin-bottom: 20px;
+    width: 100%;
+    clear: both;
+}
+
+.form-table th {
+    width: 200px;
+    padding: 20px 10px 20px 0;
+    font-weight: 500;
+    line-height: 1.3;
+    vertical-align: top;
+}
+
+.form-table td {
+    padding: 15px 10px;
+    line-height: 1.3;
+    vertical-align: top;
+}
+
+.form-table input[type="text"],
+.form-table input[type="number"],
+.form-table input[type="email"],
+.form-table input[type="password"],
+.form-table input[type="url"],
+.form-table input[type="tel"],
+.form-table select,
+.form-table textarea {
+    width: 100%;
+    max-width: 25em;
+    padding: 6px 8px;
+    margin: 0;
+}
+
+.wp-pos-control-panel-primary h3 {
+    margin: 0 0 8px 0;
+    color: #1d2327;
+    font-size: 1.3em;
+}
+
+.wp-pos-control-panel-primary p {
+    margin: 0;
+    color: #646970;
+    font-size: 14px;
+}
+
+.wp-pos-control-panel-secondary {
+    display: flex;
+    gap: 10px;
+}
+
+.wp-pos-form-columns {
+    display: flex;
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.wp-pos-form-column {
+    flex: 1;
+    min-width: 0;
+}
+
+.wp-pos-form-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.wp-pos-form-card-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.wp-pos-form-card-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.wp-pos-form-card-body {
+    padding: 24px;
+}
+
+.wp-pos-form-group {
+    margin-bottom: 16px;
+}
+
+.wp-pos-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #1d2327;
+}
+
+.wp-pos-select,
+.wp-pos-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    background: #fff;
+    color: #2c3338;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.wp-pos-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border: 1px solid #2271b1;
+    border-radius: 4px;
+    background: #2271b1;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wp-pos-button:hover {
+    background: #135e96;
+    border-color: #135e96;
+    color: #fff;
+}
+
+.wp-pos-button-secondary {
+    background: #f6f7f7;
+    border-color: #8c8f94;
+    color: #2c3338;
+}
+
+.wp-pos-button-secondary:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+    color: #2c3338;
+}
+
+.wp-pos-button .dashicons {
+    margin-right: 5px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.wp-pos-table-container {
+    overflow-x: auto;
+    margin: 20px 0;
+}
+
+.wp-pos-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.wp-pos-table th,
+.wp-pos-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.wp-pos-table th {
+    background-color: #f6f7f7;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.wp-pos-table tr:hover {
+    background-color: #f6f7f7;
+}
+
+.wp-pos-notice-box {
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    border-left: 4px solid #72aee6;
+    background: #f6f7f7;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.wp-pos-notice-box.info {
+    border-left-color: #72aee6;
+}
+
+.wp-pos-notice-box p {
+    margin: 0;
+    padding: 0;
+}
+
+/* Responsive */
+@media screen and (max-width: 960px) {
+    .wp-pos-form-columns {
+        flex-direction: column;
+    }
+    
+    .wp-pos-control-panel {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .wp-pos-control-panel-secondary {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .wp-pos-button {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+}
+
+.wp-pos-admin-sidebar li:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.wp-pos-admin-sidebar .dashicons {
+    color: #2271b1;
+    margin-right: 8px;
+    vertical-align: text-bottom;
+}
+
+/* Tooltips */
+.wp-pos-tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.wp-pos-tooltip .wp-pos-tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: normal;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.wp-pos-tooltip .wp-pos-tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
+.wp-pos-tooltip:hover .wp-pos-tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Grid Layout para áreas administrativas */
+.wp-pos-admin-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 20px;
+}
+
+@media (max-width: 960px) {
+    .wp-pos-admin-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Estilos para tarjetas de producto */
+.wp-pos-products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.wp-pos-product-card {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wp-pos-product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.wp-pos-product-card-image {
+    height: 180px;
+    background-color: #f5f5f5;
+    position: relative;
+    overflow: hidden;
+}
+
+.wp-pos-product-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.wp-pos-product-card:hover .wp-pos-product-card-image img {
+    transform: scale(1.05);
+}
+
+.wp-pos-product-card-content {
+    padding: 15px;
+}
+
+.wp-pos-product-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+}
+
+.wp-pos-product-card-price {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2271b1;
+    margin-bottom: 10px;
+}
+
+.wp-pos-product-card-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+    .wp-pos-stats-row,
+    .wp-pos-quick-links-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .wp-pos-filters {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .wp-pos-filters .filter-item {
+        width: 100%;
+    }
+}
+
+/* Estilos para panel de control */
+.wp-pos-control-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.wp-pos-control-panel-primary h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #23282d;
+}
+
+.wp-pos-control-panel-primary p {
+    margin: 0;
+    color: #646970;
+    max-width: 600px;
+}
+
+/* Estilos para el panel de filtros */
+.wp-pos-filter-panel {
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.wp-pos-filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.wp-pos-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.wp-pos-filter-group {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.wp-pos-filter-group label {
+    font-weight: 500;
+    font-size: 13px;
+    color: #3c434a;
+}
+
+.wp-pos-filter-group input,
+.wp-pos-filter-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.wp-pos-filter-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Panel de contenido */
+.wp-pos-content-panel {
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+/* Estilos para sin resultados */
+.wp-pos-no-results {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.wp-pos-no-results-icon {
+    margin-bottom: 15px;
+}
+
+.wp-pos-no-results-icon .dashicons {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #c3c4c7;
+}
+
+.wp-pos-no-results h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #3c434a;
+}
+
+.wp-pos-no-results p {
+    margin: 0 0 20px 0;
+    color: #646970;
+}
+
+/* Estilo para tablas */
+.wp-pos-table-container {
+    overflow-x: auto;
+}
+
+.wp-pos-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.wp-pos-table thead th {
+    background-color: #f0f0f1;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #3c434a;
+    border-bottom: 1px solid #c3c4c7;
+}
+
+.wp-pos-table tbody tr {
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.wp-pos-table tbody tr:hover {
+    background-color: #f6f7f7;
+}
+
+.wp-pos-table td {
+    padding: 12px 16px;
+    vertical-align: middle;
+}
+
+/* Estilos para menu00fas desplegables de acciones */
+.wp-pos-actions-cell {
+    text-align: right;
+    position: relative;
+}
+
+.wp-pos-actions-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.wp-pos-dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    min-width: 180px;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    border-radius: 4px;
+    z-index: 10;
+    text-align: left;
+}
+
+.wp-pos-actions-dropdown:hover .wp-pos-dropdown-content,
+.wp-pos-actions-dropdown:focus-within .wp-pos-dropdown-content {
+    display: block;
+}
+
+.wp-pos-dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    color: #2c3338;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.wp-pos-dropdown-item:hover {
+    background-color: #f6f7f7;
+}
+
+.wp-pos-dropdown-item .dashicons {
+    margin-right: 8px;
+    color: #787c82;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Estilos para paginaciu00f3n */
+.wp-pos-pagination {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    border-top: 1px solid #f0f0f1;
+}
+
+/* Media queries para la tabla responsive */
+@media screen and (max-width: 782px) {
+    .wp-pos-control-panel {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .wp-pos-table thead {
+        display: none;
+    }
+    
+    .wp-pos-table tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #dcdcde;
+        border-radius: 4px;
+    }
+    
+    .wp-pos-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+        text-align: right;
+        border-bottom: 1px solid #f0f0f1;
+    }
+    
+    .wp-pos-table td:last-child {
+        border-bottom: none;
+    }
+    
+    .wp-pos-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        margin-right: 10px;
+        text-align: left;
+    }
+    
+    .wp-pos-actions-cell {
+        text-align: center;
+    }
+    
+    .wp-pos-dropdown-content {
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+/* Estilos para botones de texto */
+.wp-pos-button-text {
+    background: transparent;
+    color: #2271b1;
+    border: none;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.wp-pos-button-text:hover {
+    color: #135e96;
+    background-color: #f6f7f7;
+    border-radius: 4px;
+}
+
+/* Estilos para botones de icono */
+.wp-pos-button-icon {
+    background: transparent;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wp-pos-button-icon:hover {
+    background-color: #f6f7f7;
+}
+
+.wp-pos-button-icon .dashicons {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+}
+
+/* Estilos para tarjetas de formulario */
+.wp-pos-form-card {
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.wp-pos-form-card-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0f0f1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wp-pos-form-card-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.wp-pos-form-card-body {
+    padding: 20px;
+}
+
+.wp-pos-form-card-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Estilos para formularios */
+.wp-pos-form-group {
+    margin-bottom: 15px;
+}
+
+.wp-pos-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    font-size: 14px;
+    color: #3c434a;
+}
+
+.wp-pos-input,
+.wp-pos-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.wp-pos-input:focus,
+.wp-pos-select:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+
+/* Grupos de entrada */
+.wp-pos-input-group {
+    display: flex;
+    align-items: stretch;
+}
+
+.wp-pos-input-addon {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    background-color: #f0f0f1;
+    border: 1px solid #dcdcde;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+    font-weight: 500;
+    color: #3c434a;
+}
+
+.wp-pos-input-group .wp-pos-input {
+    border-radius: 0 4px 4px 0;
+    flex-grow: 1;
+}
+
+/* Grid y columnas para formularios */
+.wp-pos-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.wp-pos-form-columns {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.wp-pos-form-column {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Totales */
+.wp-pos-totals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.wp-pos-totals-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wp-pos-totals-label {
+    font-weight: 500;
+    color: #3c434a;
+}
+
+.wp-pos-totals-value {
+    font-weight: 600;
+    text-align: right;
+}
+
+.wp-pos-totals-grand {
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 5px;
+}
+
+.wp-pos-divider {
+    height: 1px;
+    background-color: #f0f0f1;
+    margin: 5px 0;
+}
+
+/* Mensaje de vacío en tabla */
+.wp-pos-empty-message {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.wp-pos-empty-icon {
+    margin-bottom: 10px;
+}
+
+.wp-pos-empty-icon .dashicons {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+    color: #c3c4c7;
+}
+
+/* Alineación de columnas en tablas */
+.wp-pos-column-center {
+    text-align: center;
+}
+
+.wp-pos-column-right {
+    text-align: right;
+}
+
+/* Botones grandes */
+.wp-pos-button-large {
+    min-height: 40px;
+    padding: 8px 20px;
+    font-size: 14px;
+}
+
+/* Acciones de formulario */
+.wp-pos-form-actions {
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+/* Media queries */
+@media screen and (max-width: 782px) {
+    .wp-pos-form-columns {
+        flex-direction: column;
+    }
+    
+    .wp-pos-form-actions {
+        flex-direction: column;
+    }
+    
+    .wp-pos-form-actions .wp-pos-button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+/* Estilos para reportes */
+.wp-pos-reports-wrapper .wp-pos-content-panel {
+    margin-bottom: 40px;
+}
+
+/* Contenedor de gráficos */
+.wp-pos-chart-container {
+    margin-bottom: 20px;
+}
+
+.wp-pos-placeholder-chart {
+    width: 100%;
+    height: 300px;
+    background-color: #f9f9f9;
+    border: 1px dashed #dcdcde;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+}
+
+.wp-pos-chart-icon {
+    margin-bottom: 15px;
+}
+
+.wp-pos-chart-icon .dashicons {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+    color: #c3c4c7;
+}
+
+/* Estilos para enlaces de reportes rápidos */
+.wp-pos-quick-reports {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wp-pos-quick-reports li {
+    margin-bottom: 10px;
+}
+
+.wp-pos-quick-report-link {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    color: #3c434a;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.wp-pos-quick-report-link:hover {
+    background-color: #f0f6fc;
+    color: #2271b1;
+}
+
+.wp-pos-quick-report-link .dashicons {
+    margin-right: 10px;
+    color: #2271b1;
+}
+
+/* Estilos para la cuadrícula de resumen */
+.wp-pos-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.wp-pos-summary-item {
+    text-align: center;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+
+.wp-pos-summary-title {
+    font-size: 14px;
+    color: #3c434a;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.wp-pos-summary-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2271b1;
+}
+
+/* Estilos para botones de bloque completo */
+.wp-pos-button-block {
+    display: block;
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+}
+
+/* Media queries para responsividad */
+@media screen and (max-width: 782px) {
+    .wp-pos-summary-grid {
+        grid-template-columns: 1fr;
+    }
+}

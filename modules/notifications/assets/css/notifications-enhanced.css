@@ -1,0 +1,303 @@
+/**
+ * Estilos mejorados para el mu00f3dulo de notificaciones
+ *
+ * @package WP-POS
+ * @since 1.0.0
+ */
+
+/* Contenedor principal */
+.wp-pos-notifications-wrapper {
+    max-width: 1240px;
+    margin: 0 auto !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+    background-color: #f1f3f5;
+    padding: 20px;
+    margin: -10px -20px;
+    min-height: calc(100vh - 100px);
+}
+
+/* Panel de control superior */
+.wp-pos-notifications-header {
+    background: linear-gradient(135deg, #3b4374, #a23a59);
+    color: white;
+    border-radius: 8px;
+    margin-top: 15px;
+    margin-bottom: 24px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+}
+
+.wp-pos-notifications-header-primary h1 {
+    color: #ffffff !important;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.wp-pos-notifications-header-primary p {
+    color: rgba(255,255,255,0.9) !important;
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Botu00f3n de volver */
+.wp-pos-back-button {
+    background-color: rgba(255,255,255,0.9) !important;
+    color: #666 !important;
+    border: none !important;
+    padding: 8px 15px !important;
+    border-radius: 4px !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.wp-pos-back-button:hover {
+    background-color: rgba(255,255,255,1);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+    color: #333 !important;
+}
+
+/* Contenedor de bu00fasqueda y filtros */
+.wp-pos-filter-container {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+    padding: 15px;
+}
+
+/* Pestau00f1as de filtrado */
+.wp-pos-tabs-container {
+    display: flex;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 15px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.wp-pos-tab {
+    padding: 10px 15px;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.wp-pos-tab.active {
+    color: #3b4374;
+    border-bottom-color: #3b4374;
+}
+
+.wp-pos-tab:hover:not(.active) {
+    color: #4b5563;
+    border-bottom-color: #e5e7eb;
+}
+
+.wp-pos-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    margin-left: 8px;
+    background-color: #3b4374;
+    color: white;
+    font-size: 12px;
+    border-radius: 10px;
+}
+
+/* Tarjeta de notificaciones */
+.wp-pos-notifications-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.wp-pos-notifications-card-header {
+    background: #fff;
+    padding: 12px 20px;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wp-pos-notifications-card-header h3 {
+    margin: 0;
+    color: #334155;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wp-pos-notifications-card-header h3 .dashicons {
+    color: #3b4374;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.wp-pos-notifications-card-body {
+    padding: 20px;
+}
+
+/* Lista de notificaciones */
+.wp-pos-notification-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wp-pos-notification-item {
+    background: #f9fafb;
+    border-radius: 6px;
+    padding: 16px;
+    border-left: 4px solid #3b4374;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.wp-pos-notification-item:hover {
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+.wp-pos-notification-item.urgent {
+    border-left-color: #ef4444;
+}
+
+.wp-pos-notification-item.warning {
+    border-left-color: #f59e0b;
+}
+
+.wp-pos-notification-item.info {
+    border-left-color: #3b82f6;
+}
+
+.wp-pos-notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.wp-pos-notification-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: #1f2937;
+    margin: 0 0 5px 0;
+}
+
+.wp-pos-notification-meta {
+    font-size: 12px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wp-pos-notification-content {
+    color: #4b5563;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.wp-pos-notification-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.wp-pos-notification-button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.wp-pos-notification-primary {
+    background-color: #3b4374;
+    color: white;
+    border: none;
+}
+
+.wp-pos-notification-primary:hover {
+    background-color: #2d355e;
+}
+
+.wp-pos-notification-secondary {
+    background-color: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.wp-pos-notification-secondary:hover {
+    background-color: #e5e7eb;
+}
+
+/* Estado vacu00edo */
+.wp-pos-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.wp-pos-empty-state-icon {
+    font-size: 48px;
+    color: #9ca3af;
+    margin-bottom: 16px;
+}
+
+.wp-pos-empty-state-icon .dashicons {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #10b981;
+}
+
+.wp-pos-empty-state-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 8px 0;
+}
+
+.wp-pos-empty-state-description {
+    color: #6b7280;
+    max-width: 400px;
+    margin: 0;
+}
