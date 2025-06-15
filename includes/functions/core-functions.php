@@ -1,6 +1,6 @@
 <?php
 /**
- * Funciones bu00e1sicas del core para el plugin WP-POS
+ * Funciones básicas del core para el plugin WP-POS
  *
  * Proporciona funciones de utilidad usadas en todo el sistema.
  *
@@ -8,23 +8,23 @@
  * @since 1.0.0
  */
 
-// Prevenciu00f3n de acceso directo
+// Prevención de acceso directo
 if (!defined('ABSPATH')) {
     exit;
 }
 
 /**
- * Obtener opciones de configuraciu00f3n del plugin
+ * Obtener opciones de configuración del plugin
  *
  * @since 1.0.0
- * @param string $option Opciu00f3n especu00edfica a obtener
- * @param mixed $default Valor por defecto si la opciu00f3n no existe
- * @return mixed Valor de la opciu00f3n o array completo de opciones
+ * @param string $option Opción específica a obtener
+ * @param mixed $default Valor por defecto si la opción no existe
+ * @return mixed Valor de la opción o array completo de opciones
  */
 function wp_pos_get_option($option = null, $default = null) {
     static $cached_options = null;
     
-    // Si ya tenemos las opciones en cachu00e9 para esta ejecuciu00f3n de PHP, usarlas
+    // Si ya tenemos las opciones en caché para esta ejecución de PHP, usarlas
     if ($cached_options !== null) {
         if (is_null($option)) {
             return $cached_options;
@@ -33,35 +33,35 @@ function wp_pos_get_option($option = null, $default = null) {
         return isset($cached_options[$option]) ? $cached_options[$option] : $default;
     }
     
-    // Intentar usar el Cache Manager si estu00e1 disponible
+    // Intentar usar el Cache Manager si está disponible
     $options = null;
     if (class_exists('WP_POS_Cache_Manager')) {
         $cache = WP_POS_Cache_Manager::get_instance();
         $options = $cache->get('all_options', 'settings');
     }
     
-    // Si no hay opciones en cachu00e9 o el cache manager no estu00e1 disponible, obtener de la base de datos
+    // Si no hay opciones en caché o el cache manager no está disponible, obtener de la base de datos
     if (false === $options || null === $options) {
         $options = get_option('wp_pos_options', array());
         
-        // Guardar en cachu00e9 si el Cache Manager estu00e1 disponible
+        // Guardar en caché si el Cache Manager está disponible
         if (class_exists('WP_POS_Cache_Manager')) {
             $cache->set('all_options', $options, 'settings');
         }
     }
     
-    // Si las opciones estu00e1n vaci00edas, usaremos las opciones predeterminadas del instalador
+    // Si las opciones están vacías, usaremos las opciones predeterminadas del instalador
     if (empty($options)) {
         // Opciones predeterminadas
         $options = array(
-            // Informaciu00f3n del negocio
+            // Información del negocio
             'business_name' => get_bloginfo('name'),
             'business_address' => '',
             'business_phone' => '',
             'business_email' => get_bloginfo('admin_email'),
             'business_logo' => '',
             
-            // Configuraciu00f3n general
+            // Configuración general
             'pos_page_id' => 0,
             'restrict_access' => 'yes',
             'enable_keyboard_shortcuts' => 'yes',
@@ -73,7 +73,7 @@ function wp_pos_get_option($option = null, $default = null) {
             'enable_discount' => 'yes',
             'default_payment_method' => 'cash',
             
-            // Opciones de impresi00f3n
+            // Opciones de impresión
             'receipt_template' => 'default',
             'receipt_logo' => '',
             'receipt_store_name' => get_bloginfo('name'),
@@ -103,7 +103,7 @@ function wp_pos_get_option($option = null, $default = null) {
         );
     }
     
-    // Guardar las opciones en cachu00e9 para esta ejecuciu00f3n
+    // Guardar las opciones en caché para esta ejecución
     $cached_options = $options;
     
     if (is_null($option)) {
@@ -114,12 +114,12 @@ function wp_pos_get_option($option = null, $default = null) {
 }
 
 /**
- * Actualizar opciones de configuraciu00f3n del plugin
+ * Actualizar opciones de configuración del plugin
  *
  * @since 1.0.0
- * @param string $option Opciu00f3n a actualizar
+ * @param string $option Opción a actualizar
  * @param mixed $value Nuevo valor
- * @return bool u00c9xito de la operaciu00f3n
+ * @return bool Éxito de la operación
  */
 function wp_pos_update_option($option, $value) {
     $options = wp_pos_get_option();
@@ -128,7 +128,7 @@ function wp_pos_update_option($option, $value) {
     $updated = update_option('wp_pos_options', $options);
     
     if ($updated) {
-        // Limpiar cachu00e9
+        // Limpiar caché
         WP_POS_Cache_Manager::get_instance()->clear_settings_cache();
     }
     
@@ -136,7 +136,7 @@ function wp_pos_update_option($option, $value) {
 }
 
 /**
- * Verificar si un usuario tiene permisos para una capacidad especu00edfica
+ * Verificar si un usuario tiene permisos para una capacidad específica
  *
  * @since 1.0.0
  * @param string $capability Capacidad a verificar
@@ -144,15 +144,15 @@ function wp_pos_update_option($option, $value) {
  * @return bool True si tiene permiso, False si no
  */
 /**
- * Verificar si un usuario tiene permiso para realizar una acciu00f3n especu00edfica.
- * Los administradores SIEMPRE tenu00edan acceso completo sin restricciones.
+ * Verificar si un usuario tiene permiso para realizar una acción específica.
+ * Los administradores SIEMPRE tienen acceso completo sin restricciones.
  *
  * @param string $capability Capacidad a verificar
  * @param int|null $user_id ID del usuario, si es null se usa el usuario actual
  * @return bool True si tiene permiso, False si no
  */
 function wp_pos_current_user_can($capability, $user_id = null) {
-    // Si no se especificu00f3 un usuario, usar el usuario actual
+    // Si no se especificó un usuario, usar el usuario actual
     if (null === $user_id) {
         $user_id = get_current_user_id();
     }
@@ -168,15 +168,15 @@ function wp_pos_current_user_can($capability, $user_id = null) {
         return true;
     }
     
-    // Para otros usuarios, verificar la capacidad especu00edfica
+    // Para otros usuarios, verificar la capacidad específica
     return $user->has_cap($capability);
 }
 
 /**
- * Generar un nu00famero u00fanico para una venta
+ * Generar un número único para una venta
  *
  * @since 1.0.0
- * @return string Nu00famero de venta formateado
+ * @return string Número de venta formateado
  */
 function wp_pos_generate_sale_number() {
     $prefix = apply_filters('wp_pos_sale_number_prefix', 'POS-');
@@ -190,14 +190,14 @@ function wp_pos_generate_sale_number() {
     // Actualizar contador
     update_option($count_key, $count);
     
-    // Generar nu00famero
+    // Generar número
     $number = $prefix . $date_part . '-' . sprintf('%04d', $count);
     
     return apply_filters('wp_pos_sale_number', $number, $count, $date_part);
 }
 
 /**
- * Formatear un precio segu00fan la configuraciu00f3n
+ * Formatear un precio según la configuración
  *
  * @since 1.0.0
  * @param float $price Precio a formatear
@@ -205,11 +205,11 @@ function wp_pos_generate_sale_number() {
  * @return string Precio formateado
  */
 function wp_pos_format_price($price, $args = array()) {
-    // Verificar si WooCommerce estu00e1 activo
+    // Verificar si WooCommerce está activo
     $woocommerce_active = function_exists('WC');
     
-    // Valores por defecto si WooCommerce no estu00e1 activo
-    $default_currency = 'USD';
+    // Valores por defecto si WooCommerce no está activo
+    $default_currency = '$';
     $default_decimals = 2;
     $default_decimal_separator = '.';
     $default_thousand_separator = ',';
@@ -224,14 +224,14 @@ function wp_pos_format_price($price, $args = array()) {
         'format' => wp_pos_get_option('currency_position', $woocommerce_active ? get_option('woocommerce_currency_pos', 'left') : $default_format),
     ));
     
-    // Si WooCommerce estu00e1 activo, usar su formateador
+    // Si WooCommerce está activo, usar su formateador
     if ($woocommerce_active) {
         $formatted_price = wc_price($price, $args);
     } else {
-        // Implementaciu00f3n propia de formato de precio
+        // Implementación propia de formato de precio
         $price = number_format($price, $args['decimals'], $args['decimal_separator'], $args['thousand_separator']);
         
-        // Aplicar formato segu00fan posiciu00f3n de moneda
+        // Aplicar formato según posición de moneda
         switch ($args['format']) {
             case 'left':
                 $formatted_price = $args['currency'] . $price;
@@ -262,7 +262,7 @@ function wp_pos_format_price($price, $args = array()) {
  * @param array $context Datos adicionales de contexto
  */
 function wp_pos_log($message, $level = 'info', $context = array()) {
-    // Verificar si el logging estu00e1 activado
+    // Verificar si el logging está activado
     if ('yes' !== wp_pos_get_option('enable_logging', 'yes')) {
         return;
     }
@@ -278,7 +278,7 @@ function wp_pos_log($message, $level = 'info', $context = array()) {
     // Filtrar datos antes de guardar
     $data = apply_filters('wp_pos_log_data', $data, $level, $context);
     
-    // Au00f1adir a la tabla de log si existe
+    // Añadir a la tabla de log si existe
     global $wpdb;
     $table_name = $wpdb->prefix . 'wp_pos_logs';
     
@@ -295,20 +295,20 @@ function wp_pos_log($message, $level = 'info', $context = array()) {
         );
     }
     
-    // Acciu00f3n para integrar con otros sistemas de log
+    // Acción para integrar con otros sistemas de log
     do_action('wp_pos_logged_message', $data);
     
-    // Si es error, tambiu00e9n usar error_log de PHP
+    // Si es error, también usar error_log de PHP
     if ('error' === $level) {
         error_log(sprintf('[WP-POS] %s: %s', $level, $message));
     }
 }
 
 /**
- * Verificar si WooCommerce estu00e1 activo
+ * Verificar si WooCommerce está activo
  *
  * @since 1.0.0
- * @return bool True si WooCommerce estu00e1 activo, False si no
+ * @return bool True si WooCommerce está activo, False si no
  */
 function wp_pos_is_woocommerce_active() {
     return class_exists('WooCommerce');
@@ -330,7 +330,7 @@ function wp_pos_asset_url($path) {
  *
  * @since 1.0.0
  * @param string $template Nombre del template
- * @param string $extension Extensiu00f3n del archivo (default: php)
+ * @param string $extension Extensión del archivo (default: php)
  * @return string Ruta al archivo de template o false si no existe
  */
 function wp_pos_get_template_path($template, $extension = 'php') {
@@ -350,7 +350,7 @@ function wp_pos_get_template_path($template, $extension = 'php') {
         return $plugin_template;
     }
     
-    // No se encontru00f3 el template
+    // No se encontró el template
     wp_pos_log(
         sprintf(__('Template %s no encontrado.', 'wp-pos'), $template),
         'warning'
@@ -379,7 +379,7 @@ function wp_pos_load_template($template, $args = array(), $return = false) {
         ob_start();
     }
     
-    // Extraer variables para que estu00e9n disponibles en el template
+    // Extraer variables para que estén disponibles en el template
     if (!empty($args) && is_array($args)) {
         extract($args);
     }
@@ -392,11 +392,11 @@ function wp_pos_load_template($template, $args = array(), $return = false) {
 }
 
 /**
- * Validar un nu00famero de venta (ej: POS-20230101-0001)
+ * Validar un número de venta (ej: POS-20230101-0001)
  *
  * @since 1.0.0
- * @param string $sale_number Nu00famero a validar
- * @return bool True si es vu00e1lido, False si no
+ * @param string $sale_number Número a validar
+ * @return bool True si es válido, False si no
  */
 function wp_pos_validate_sale_number($sale_number) {
     $prefix = apply_filters('wp_pos_sale_number_prefix', 'POS-');
@@ -424,15 +424,15 @@ function wp_pos_get_sale_statuses() {
 }
 
 /**
- * Obtener lista de mu00e9todos de pago disponibles
+ * Obtener lista de métodos de pago disponibles
  *
  * @since 1.0.0
- * @return array Mu00e9todos de pago
+ * @return array Métodos de pago
  */
 function wp_pos_get_payment_methods() {
     $methods = array(
         'cash'      => __('Efectivo', 'wp-pos'),
-        'card'      => __('Tarjeta de cru00e9dito/du00e9bito', 'wp-pos'),
+        'card'      => __('Tarjeta de crédito/débito', 'wp-pos'),
         'transfer'  => __('Transferencia bancaria', 'wp-pos'),
         'check'     => __('Cheque', 'wp-pos'),
         'other'     => __('Otro', 'wp-pos'),
@@ -475,11 +475,11 @@ function wp_pos_get_current_user() {
 }
 
 /**
- * Obtener URL del panel de administraciu00f3n del POS
+ * Obtener URL del panel de administración del POS
  *
  * @since 1.0.0
- * @param string $tab Pestau00f1a especu00edfica
- * @param array $args Paru00e1metros adicionales
+ * @param string $tab Pestaña específica
+ * @param array $args Parámetros adicionales
  * @return string URL al panel
  */
 function wp_pos_get_admin_url($tab = '', $args = array()) {
@@ -493,7 +493,7 @@ function wp_pos_get_admin_url($tab = '', $args = array()) {
         $args = array();
     }
     
-    // Asignar la pu00e1gina correcta basada en el tab
+    // Asignar la página correcta basada en el tab
     switch ($tab) {
         case 'sales':
             $page = 'wp-pos-sales';
@@ -526,7 +526,7 @@ function wp_pos_get_admin_url($tab = '', $args = array()) {
     
     $base_args = array('page' => $page);
     
-    // Ya no necesitamos el paru00e1metro 'tab' pues ahora es parte del 'page'
+    // Ya no necesitamos el parámetro 'tab' pues ahora es parte del 'page'
     return wp_pos_safe_add_query_arg(array_merge($base_args, $args), admin_url('admin.php'));
 }
 
@@ -534,11 +534,11 @@ function wp_pos_get_admin_url($tab = '', $args = array()) {
  * Obtener URL del punto de venta frontend
  *
  * @since 1.0.0
- * @param array $args Paru00e1metros adicionales
+ * @param array $args Parámetros adicionales
  * @return string URL al punto de venta
  */
 function wp_pos_get_pos_url($args = array()) {
-    // Intentar obtener pu00e1gina configurada
+    // Intentar obtener página configurada
     $pos_page_id = wp_pos_get_option('pos_page_id', 0);
     
     if ($pos_page_id > 0) {
@@ -635,7 +635,7 @@ function wp_pos_get_tax_rate() {
 }
 
 /**
- * Funciu00f3n de depuraciu00f3n para el plugin POS
+ * Función de depuración para el plugin POS
  *
  * @param mixed $data Los datos a depurar
  * @param string $label Etiqueta opcional
@@ -676,13 +676,13 @@ function wp_pos_debug($data, $label = '', $write_to_file = true) {
 }
 
 /**
- * Versiu00f3n ultra-segura de add_query_arg que maneja valores nulos
+ * Versión ultra-segura de add_query_arg que maneja valores nulos
  * y garantiza que no se pasen valores nulos a las funciones nativas de WordPress
  *
  * @since 1.0.0
- * @param mixed $args Array o string de argumentos a au00f1adir
- * @param mixed $url URL a la que au00f1adir los argumentos
- * @return string URL con argumentos au00f1adidos
+ * @param mixed $args Array o string de argumentos a añadir
+ * @param mixed $url URL a la que añadir los argumentos
+ * @return string URL con argumentos añadidos
  */
 function wp_pos_safe_add_query_arg($args, $url = '') {
     // Sanitizar argumentos (garantiza que nunca sea null)
@@ -694,7 +694,7 @@ function wp_pos_safe_add_query_arg($args, $url = '') {
     if (is_array($args)) {
         foreach ($args as $key => $value) {
             if (is_null($value)) {
-                $args[$key] = ''; // Reemplazar null con string vacu00edo
+                $args[$key] = ''; // Reemplazar null con string vacío
             }
         }
     }
@@ -706,17 +706,17 @@ function wp_pos_safe_add_query_arg($args, $url = '') {
         $url = strval($url); // Convertir a string
     }
     
-    // Si la URL estu00e1 vacu00eda, usar comportamiento nativo (pero asegurando que args no tenga nulls)
+    // Si la URL está vacía, usar comportamiento nativo (pero asegurando que args no tenga nulls)
     if ($url === '') {
         return add_query_arg($args);
     }
     
-    // Llamar a add_query_arg con paru00e1metros sanitizados
+    // Llamar a add_query_arg con parámetros sanitizados
     return add_query_arg($args, $url);
 }
 
 /**
- * Versiu00f3n ultra-segura de esc_url que maneja valores nulos
+ * Versión ultra-segura de esc_url que maneja valores nulos
  *
  * @since 1.0.0
  * @param mixed $url URL a escapar
@@ -738,13 +738,13 @@ function wp_pos_safe_esc_url($url) {
 }
 
 /**
- * Versiu00f3n ultra-segura de strpos que maneja valores nulos
+ * Versión ultra-segura de strpos que maneja valores nulos
  *
  * @since 1.0.0
  * @param mixed $haystack String en el que buscar
  * @param mixed $needle String a buscar
- * @param int $offset Posiciu00f3n desde la que empezar a buscar
- * @return int|false Posiciu00f3n donde se encontru00f3 la aguja o falso
+ * @param int $offset Posición desde la que empezar a buscar
+ * @return int|false Posición donde se encontró la aguja o falso
  */
 function wp_pos_safe_strpos($haystack, $needle, $offset = 0) {
     // Verificar y sanitizar haystack
@@ -765,12 +765,12 @@ function wp_pos_safe_strpos($haystack, $needle, $offset = 0) {
         $needle = strval($needle);
     }
     
-    // Si needle estu00e1 vacu00edo, devolver 0 (comportamiento de PHP para needle vacu00edo)
+    // Si needle está vacío, devolver 0 (comportamiento de PHP para needle vacío)
     if ($needle === '') {
         return 0;
     }
     
-    // Si haystack estu00e1 vacu00edo, no hay nada que buscar
+    // Si haystack está vacío, no hay nada que buscar
     if ($haystack === '') {
         return false;
     }
@@ -779,13 +779,13 @@ function wp_pos_safe_strpos($haystack, $needle, $offset = 0) {
 }
 
 /**
- * Versiu00f3n ultra-segura de str_replace que maneja valores nulos
+ * Versión ultra-segura de str_replace que maneja valores nulos
  *
  * @since 1.0.0
  * @param mixed $search String a buscar
  * @param mixed $replace String de reemplazo
  * @param mixed $subject String en el que realizar el reemplazo
- * @param int $count Nu00famero de reemplazos realizados
+ * @param int $count Número de reemplazos realizados
  * @return string|array String o array con los reemplazos realizados
  */
 function wp_pos_safe_str_replace($search, $replace, $subject, &$count = null) {

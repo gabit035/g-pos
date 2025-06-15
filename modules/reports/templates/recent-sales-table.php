@@ -18,93 +18,7 @@ if (!defined('ABSPATH')) {
 // Verificar si WooCommerce está activo para usar sus funciones de formato
 $wc_active = function_exists('wc_price');
 
-// Función para formatear precios con el símbolo de peso argentino
-if (!function_exists('wp_pos_format_price')) {
-    function wp_pos_format_price($price, $args = array()) {
-        $price = floatval($price);
-        
-        // Formatear el número con separador de miles y decimales
-        $formatted = number_format($price, 2, ',', '.');
-        
-        // Siempre usar el símbolo de peso argentino
-        $currency_symbol = '$';
-        
-        // Asegurarse de que el símbolo no tenga espacios adicionales
-        $currency_symbol = trim($currency_symbol);
-        
-        // Devolver el precio formateado con el símbolo de peso argentino
-        return $currency_symbol . ' ' . $formatted;
-    }
-}
-
-// Sobrescribir temporalmente la función de WooCommerce si existe
-if (function_exists('wc_price') && !function_exists('wc_price_original')) {
-    // Guardar la función original
-    function wc_price_original($price, $args = array()) {
-        return wc_price($price, $args);
-    }
-    
-    // Reemplazar con nuestra implementación que usa el símbolo de peso argentino
-    function wc_price($price, $args = array()) {
-        // Forzar el uso del símbolo de peso argentino
-        $args['currency_symbol'] = '$';
-        $args['decimal_separator'] = ',';
-        $args['thousand_separator'] = '.';
-        $args['decimals'] = 2;
-        
-        // Usar la función de formato de WP POS
-        if (function_exists('wp_pos_format_price')) {
-            return wp_pos_format_price($price, $args);
-        }
-        
-        // Si no está disponible, usar la implementación básica
-        $formatted = number_format($price, 2, ',', '.');
-        return '$ ' . $formatted;
-    }
-}
-
-// Verificar que tenemos los datos necesarios
-if (!isset($recent_sales)) {
-    $recent_sales = [];
-    error_log('No se recibieron datos de ventas recientes');
-}
-
-// Si recent_sales es un array asociativo con estructura de respuesta
-if (isset($recent_sales['recent_sales']) && is_array($recent_sales['recent_sales'])) {
-    $sales_data = $recent_sales['recent_sales'];
-    $success = $recent_sales['success'] ?? true;
-    $message = $recent_sales['message'] ?? '';
-} elseif (isset($recent_sales['sales']) && is_array($recent_sales['sales'])) {
-    $sales_data = $recent_sales['sales'];
-    $success = $recent_sales['success'] ?? true;
-    $message = $recent_sales['message'] ?? '';
-} else {
-    // Asumir que recent_sales es directamente el array de ventas
-    $sales_data = is_array($recent_sales) ? $recent_sales : [];
-    $success = true;
-    $message = '';
-}
-
-// Verificar si hay ventas para mostrar
-$has_sales = !empty($sales_data) && is_array($sales_data);
-$sales_count = $has_sales ? count($sales_data) : 0;
-
-// Inicializar totales si no están definidos
-if (!isset($totals) || !is_array($totals)) {
-    $totals = [
-        'sales' => 0,
-        'items' => 0,
-        'tax' => 0
-    ];
-}
-
-// Debug
-error_log("Procesando ventas recientes: has_sales=$has_sales, sales_count=$sales_count");
-if ($has_sales && !empty($sales_data[0])) {
-    error_log("Primera venta: " . print_r($sales_data[0], true));
-}
-
-// Función helper para formatear fechas de manera amigable
+// Función para formatear fechas de manera amigable
 function wp_pos_format_friendly_date($date_string) {
     // Validar la fecha de entrada
     if (empty($date_string) || $date_string === '0000-00-00 00:00:00') {
@@ -198,6 +112,47 @@ function wp_pos_get_sale_payment_method_display($sale) {
     return isset($methods[$method_lower]) ? $methods[$method_lower] : ucfirst($method);
 }
 
+// Verificar que tenemos los datos necesarios
+if (!isset($recent_sales)) {
+    $recent_sales = [];
+    error_log('No se recibieron datos de ventas recientes');
+}
+
+// Si recent_sales es un array asociativo con estructura de respuesta
+if (isset($recent_sales['recent_sales']) && is_array($recent_sales['recent_sales'])) {
+    $sales_data = $recent_sales['recent_sales'];
+    $success = $recent_sales['success'] ?? true;
+    $message = $recent_sales['message'] ?? '';
+} elseif (isset($recent_sales['sales']) && is_array($recent_sales['sales'])) {
+    $sales_data = $recent_sales['sales'];
+    $success = $recent_sales['success'] ?? true;
+    $message = $recent_sales['message'] ?? '';
+} else {
+    // Asumir que recent_sales es directamente el array de ventas
+    $sales_data = is_array($recent_sales) ? $recent_sales : [];
+    $success = true;
+    $message = '';
+}
+
+// Verificar si hay ventas para mostrar
+$has_sales = !empty($sales_data) && is_array($sales_data);
+$sales_count = $has_sales ? count($sales_data) : 0;
+
+// Inicializar totales si no están definidos
+if (!isset($totals) || !is_array($totals)) {
+    $totals = [
+        'sales' => 0,
+        'items' => 0,
+        'tax' => 0
+    ];
+}
+
+// Debug
+error_log("Procesando ventas recientes: has_sales=$has_sales, sales_count=$sales_count");
+if ($has_sales && !empty($sales_data[0])) {
+    error_log("Primera venta: " . print_r($sales_data[0], true));
+}
+
 // Estadísticas rápidas de las ventas mostradas
 $displayed_sales_total = 0;
 $displayed_items_total = 0;
@@ -239,11 +194,11 @@ $average_sale = $sales_count > 0 ? $displayed_sales_total / $sales_count : 0;
                 <div class="wp-pos-quick-stats">
                     <span class="wp-pos-quick-stat" title="<?php esc_attr_e('Total mostrado', 'wp-pos'); ?>">
                         <i class="dashicons dashicons-money-alt"></i>
-                        <?php echo wp_pos_format_price($displayed_sales_total); ?>
+                        $<?php echo number_format($displayed_sales_total, 2); ?>
                     </span>
                     <span class="wp-pos-quick-stat" title="<?php esc_attr_e('Promedio por venta', 'wp-pos'); ?>">
                         <i class="dashicons dashicons-calculator"></i>
-                        <?php echo '$' . number_format($average_sale, 2); ?>
+                        $<?php echo number_format($average_sale, 2); ?>
                     </span>
                 </div>
             <?php endif; ?>
@@ -364,9 +319,9 @@ $average_sale = $sales_count > 0 ? $displayed_sales_total / $sales_count : 0;
                                 <span class="badge bg-secondary"><?php echo esc_html($items_count); ?> <?php echo _n('ítem', 'ítems', $items_count, 'wp-pos'); ?></span>
                             </td>
                             <td class="col-total">
-                                <span class="sale-total"><?php echo wp_pos_format_price($sale_total); ?></span>
+                                <span class="sale-total">$<?php echo number_format($sale_total, 2); ?></span>
                                 <?php if ($tax > 0): ?>
-                                    <small class="text-muted d-block">IVA: <?php echo wp_pos_format_price($tax); ?></small>
+                                    <small class="text-muted d-block">IVA: $<?php echo number_format($tax, 2); ?></small>
                                 <?php endif; ?>
                             </td>
                             <td class="col-payment">
@@ -463,7 +418,7 @@ $average_sale = $sales_count > 0 ? $displayed_sales_total / $sales_count : 0;
                                     </div>
                                     <div class="wp-pos-summary-item total">
                                         <span class="wp-pos-summary-label"><?php _e('Total:', 'wp-pos'); ?></span>
-                                        <span class="wp-pos-summary-value"><?php echo wp_pos_format_price($displayed_sales_total); ?></span>
+                                        <span class="wp-pos-summary-value">$<?php echo number_format($displayed_sales_total, 2); ?></span>
                                     </div>
                                 </div>
                                 

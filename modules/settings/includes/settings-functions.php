@@ -267,7 +267,7 @@ if (!function_exists('wp_pos_format_price')) {
         
         // Valores por defecto
         $defaults = array(
-            'currency'           => wp_pos_get_option('currency', 'USD'),
+            'currency'           => wp_pos_get_option('currency', '$'),
             'decimal_separator'  => wp_pos_get_option('decimal_separator', '.'),
             'thousand_separator' => wp_pos_get_option('thousand_separator', ','),
             'decimals'           => (int) wp_pos_get_option('price_decimals', 2),
