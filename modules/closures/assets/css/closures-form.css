@@ -1,0 +1,224 @@
+/**
+ * Estilos específicos para el formulario de cierres de caja
+ *
+ * @package WP-POS
+ * @subpackage Closures
+ */
+
+/* Secciones del formulario */
+.wp-pos-form-section-title {
+    border-bottom: 1px solid #eee;
+    margin: 25px 0 15px;
+    padding-bottom: 8px;
+}
+
+.wp-pos-form-section-title h3 {
+    margin: 0 0 5px;
+    font-size: 16px;
+    color: #23282d;
+}
+
+.wp-pos-form-section-title small {
+    color: #72777c;
+    font-style: italic;
+}
+
+/* Estilos para los repeater */
+.wp-pos-repeater-container {
+    margin: 10px 0 15px;
+    border: 1px solid #e5e5e5;
+    background: #f9f9f9;
+    border-radius: 4px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.wp-pos-repeater-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    background: #fff;
+    border: 1px solid #e1e1e1;
+    border-radius: 4px;
+    padding: 10px;
+    position: relative;
+}
+
+.wp-pos-repeater-item:last-child {
+    margin-bottom: 0;
+}
+
+.wp-pos-repeater-content {
+    flex: 1;
+}
+
+.wp-pos-repeater-field-group {
+    display: flex;
+    gap: 10px;
+}
+
+.wp-pos-repeater-field {
+    flex: 1;
+}
+
+.wp-pos-repeater-field input {
+    width: 100%;
+    padding: 8px 10px;
+}
+
+.wp-pos-repeater-actions {
+    margin-left: 10px;
+}
+
+.wp-pos-button-icon {
+    background: transparent;
+    border: none;
+    color: #a00;
+    cursor: pointer;
+    padding: 0;
+}
+
+.wp-pos-button-icon:hover {
+    color: #dc3232;
+}
+
+.wp-pos-repeater-actions .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.wp-pos-repeater-total {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin: 10px 0;
+    padding: 5px 10px;
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.wp-pos-repeater-total span:last-child {
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.wp-pos-repeater-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+/* Estilos para desglose de métodos de pago */
+.wp-pos-payment-methods-breakdown {
+    background: #f9f9f9;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+/* Estilos para campos de entrada */
+.wp-pos-form-field {
+    margin-bottom: 15px;
+}
+
+/* Estilos para el botón de actualización de total efectivo */
+#refresh-total-amount {
+    position: absolute;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0 5px;
+    height: 24px;
+    line-height: 22px;
+    background-color: transparent;
+    border: 1px solid #ddd;
+    color: #555;
+    transition: all 0.2s ease-in-out;
+}
+
+#refresh-total-amount:hover {
+    background-color: #f1f1f1;
+    border-color: #bbb;
+    color: #000;
+}
+
+#refresh-total-amount .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    line-height: 16px;
+}
+
+.wp-pos-input-with-icon {
+    position: relative;
+}
+
+/* Estilos para total del día */
+.wp-pos-day-total {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f0f6fc;
+    border: 1px solid #c5d9ed;
+    border-radius: 4px;
+}
+
+.wp-pos-day-total input {
+    font-weight: bold;
+    font-size: 16px;
+    color: #0073aa;
+}
+
+/* Colores para valores positivos y negativos */
+input.wp-pos-positive {
+    color: #46b450 !important;
+}
+
+input.wp-pos-negative {
+    color: #dc3232 !important;
+}
+
+/* Botones de acción */
+.wp-pos-form-actions {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.wp-pos-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 2;
+}
+
+.wp-pos-button-primary {
+    background: #0073aa;
+    border: 1px solid #006291;
+    color: #fff;
+}
+
+.wp-pos-button-primary:hover {
+    background: #006291;
+}
+
+.wp-pos-button-secondary {
+    background: #f7f7f7;
+    border: 1px solid #ccc;
+    color: #555;
+}
+
+.wp-pos-button-secondary:hover {
+    background: #f0f0f0;
+}

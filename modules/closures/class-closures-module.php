@@ -818,7 +818,7 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         // Verificar de manera definitiva con consulta SQL directa 
         $query = $wpdb->prepare(
             "SELECT id FROM {$wpdb->prefix}pos_closures 
-            WHERE DATE(created_at) = %s 
+            WHERE DATE(date_created) = %s 
             AND register_id = %d",
             $formatted_date, $register_id
         );
@@ -952,8 +952,18 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         
         // Obtener los parámetros
         $register_id = isset($_REQUEST['register_id']) ? intval($_REQUEST['register_id']) : 0;
-        $user_id = isset($_REQUEST['user_id']) ? intval($_REQUEST['user_id']) : 0;
+        $user_id = isset($_REQUEST['user_id']) && $_REQUEST['user_id'] !== '' ? intval($_REQUEST['user_id']) : 0;
         $date = isset($_REQUEST['date']) ? sanitize_text_field($_REQUEST['date']) : date('Y-m-d');
+        
+        // Depuración de los parámetros recibidos - DETALLADA
+        $this->debug_log("PARAMETERS RECEIVED FOR CALCULATE AMOUNTS: ", array(
+            'register_id' => $register_id,
+            'user_id' => $user_id,
+            'user_id_raw' => isset($_REQUEST['user_id']) ? $_REQUEST['user_id'] : 'not set',
+            'user_id_empty_check' => isset($_REQUEST['user_id']) ? (empty($_REQUEST['user_id']) ? 'EMPTY' : 'NOT EMPTY') : 'NOT SET',
+            'date' => $date,
+            'raw_request' => $_REQUEST
+        ));
         
         if ($register_id <= 0) {
             wp_send_json_error(['message' => __('Selecciona una caja registradora válida.', 'wp-pos')]);
@@ -992,12 +1002,31 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
             
             // Encontrar columna de fecha (similar al método de diagnóstico)
             $date_column = 'created_at'; // Valor predeterminado
+            $date_columns_priority = ['date_created', 'created_at', 'date', 'timestamp'];
+            
+            // Primero intentamos encontrar columnas con nombres conocidos por prioridad
+            $found_priority_column = false;
             foreach ($columns as $column) {
-                if (strpos(strtolower($column->Field), 'date') !== false || 
-                    strpos(strtolower($column->Field), 'created') !== false || 
-                    strpos(strtolower($column->Field), 'time') !== false) {
-                    $date_column = $column->Field;
-                    break;
+                foreach ($date_columns_priority as $priority_name) {
+                    if (strtolower($column->Field) === strtolower($priority_name)) {
+                        $date_column = $column->Field;
+                        $found_priority_column = true;
+                        $this->debug_log("Columna de fecha encontrada por prioridad: {$date_column}");
+                        break 2;
+                    }
+                }
+            }
+            
+            // Si no encontramos una columna por prioridad, buscamos por patrones
+            if (!$found_priority_column) {
+                foreach ($columns as $column) {
+                    if (strpos(strtolower($column->Field), 'date') !== false || 
+                        strpos(strtolower($column->Field), 'created') !== false || 
+                        strpos(strtolower($column->Field), 'time') !== false) {
+                        $date_column = $column->Field;
+                        $this->debug_log("Columna de fecha encontrada por patrón: {$date_column}");
+                        break;
+                    }
                 }
             }
             
@@ -1005,16 +1034,53 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
             $column_names = array_map(function($col) { return $col->Field; }, $columns);
             $total_column = in_array('total', $column_names) ? 'total' : (in_array('amount', $column_names) ? 'amount' : 'total');
             
+            // Determinar si existe columna para método de pago
+            $payment_method_column = '';
+            foreach ($column_names as $col) {
+                if (strpos(strtolower($col), 'payment_method') !== false || 
+                    strpos(strtolower($col), 'payment') !== false ||
+                    strpos(strtolower($col), 'method') !== false) {
+                    $payment_method_column = $col;
+                    break;
+                }
+            }
+            
             // Consulta para obtener el total de ventas usando las columnas detectadas
+            // Construir consulta para ventas en efectivo
             $sales_query = "SELECT SUM({$total_column}) as total_sales FROM {$pos_sales_table} WHERE DATE({$date_column}) = %s";
             $sales_args = [$date];
             
-            // Si se especifica un usuario y existe columna 'created_by' o 'user_id'
+            // Filtrar por método de pago en efectivo si la columna existe
+            if ($payment_method_column) {
+                // Posibles valores para efectivo en diferentes implementaciones
+                $cash_values = ['cash', 'efectivo', '1', 'Cash', 'Efectivo', 'CASH', 'EFECTIVO'];
+                $placeholders = array_fill(0, count($cash_values), '%s');
+                $placeholder_string = implode(',', $placeholders);
+                
+                $sales_query .= " AND {$payment_method_column} IN ({$placeholder_string})";
+                $sales_args = array_merge($sales_args, $cash_values);
+            }
+            
+            // Si se especifica un usuario, verificar todas las posibles columnas de usuario
             if ($user_id > 0) {
-                $user_column = in_array('created_by', $column_names) ? 'created_by' : (in_array('user_id', $column_names) ? 'user_id' : '');
-                if ($user_column) {
-                    $sales_query .= " AND {$user_column} = %d";
-                    $sales_args[] = $user_id;
+                $this->debug_log("Aplicando filtro por usuario {$user_id} en tabla pos_sales");
+                
+                // Buscar todas las posibles columnas de usuario
+                $possible_user_columns = ['user_id', 'created_by', 'employee_id', 'cashier_id', 'seller_id'];
+                $found_user_column = false;
+                
+                foreach ($possible_user_columns as $possible_column) {
+                    if (in_array($possible_column, $column_names)) {
+                        $sales_query .= " AND {$possible_column} = %d";
+                        $sales_args[] = $user_id;
+                        $found_user_column = true;
+                        $this->debug_log("Columna de usuario encontrada en pos_sales: {$possible_column}");
+                        break;
+                    }
+                }
+                
+                if (!$found_user_column) {
+                    $this->debug_log("No se encontró columna de usuario en pos_sales. Columnas disponibles: " . implode(", ", $column_names));
                 }
             }
             
@@ -1026,19 +1092,63 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
             $debug_info['sales_total'] = $sales_total;
             $debug_info['date_column_used'] = $date_column;
             $debug_info['total_column_used'] = $total_column;
+            $debug_info['payment_method_column'] = $payment_method_column ?: 'No encontrada';
         }
         
         // 2. Verificar transacciones en la tabla pos_transactions si existe
         $transactions_table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$pos_transactions_table}'") === $pos_transactions_table;
         if ($transactions_table_exists) {
+            // Verificar columnas para buscar método de pago
+            $trans_columns = $wpdb->get_results("DESCRIBE {$pos_transactions_table}");
+            $trans_column_names = array_map(function($col) { return $col->Field; }, $trans_columns);
+            
+            // Buscar columna de método de pago
+            $trans_payment_method = '';
+            foreach ($trans_column_names as $col) {
+                if (strpos(strtolower($col), 'payment_method') !== false || 
+                    strpos(strtolower($col), 'payment') !== false ||
+                    strpos(strtolower($col), 'method') !== false) {
+                    $trans_payment_method = $col;
+                    break;
+                }
+            }
+            
             // Consulta para calcular ventas y otros movimientos
             $trans_query = "SELECT SUM(amount) as total_amount FROM {$pos_transactions_table} WHERE register_id = %d";
             $trans_args = [$register_id];
             
-            // Si se especifica un usuario, filtrar por ese usuario
+            // Filtrar por método de pago en efectivo si la columna existe
+            if ($trans_payment_method) {
+                // Posibles valores para efectivo
+                $cash_values = ['cash', 'efectivo', '1', 'Cash', 'Efectivo', 'CASH', 'EFECTIVO'];
+                $placeholders = array_fill(0, count($cash_values), '%s');
+                $placeholder_string = implode(',', $placeholders);
+                
+                $trans_query .= " AND {$trans_payment_method} IN ({$placeholder_string})";
+                $trans_args = array_merge($trans_args, $cash_values);
+            }
+            
+            // Si se especifica un usuario, buscar todas las posibles columnas de usuario
             if ($user_id > 0) {
-                $trans_query .= " AND user_id = %d";
-                $trans_args[] = $user_id;
+                $this->debug_log("Aplicando filtro por usuario {$user_id} en tabla pos_transactions");
+                
+                // Buscar todas las posibles columnas de usuario
+                $possible_user_columns = ['user_id', 'created_by', 'employee_id', 'cashier_id', 'seller_id'];
+                $found_user_column = false;
+                
+                foreach ($possible_user_columns as $possible_column) {
+                    if (in_array($possible_column, $trans_column_names)) {
+                        $trans_query .= " AND {$possible_column} = %d";
+                        $trans_args[] = $user_id;
+                        $found_user_column = true;
+                        $this->debug_log("Columna de usuario encontrada en pos_transactions: {$possible_column}");
+                        break;
+                    }
+                }
+                
+                if (!$found_user_column) {
+                    $this->debug_log("No se encontró columna de usuario en pos_transactions. Columnas disponibles: " . implode(", ", $trans_column_names));
+                }
             }
             
             // Filtrar por fecha
@@ -1051,6 +1161,7 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
             
             $debug_info['transactions_query'] = $prepared_trans_query;
             $debug_info['transactions_total'] = $transactions_total;
+            $debug_info['transactions_payment_method_column'] = $trans_payment_method ?: 'No encontrada';
         }
         
         // 3. Consulta directa a la tabla de pedidos de WooCommerce si G-POS usa WooCommerce como backend
@@ -1071,20 +1182,42 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
             $debug_info['wc_total'] = $wc_total;
         }
         
-        // Determinar el total final (usando el mayor valor entre los métodos)
-        $total_amount = max($sales_total, $transactions_total, $wc_total);
+        // El total de ventas en efectivo debe responder a los filtros de fecha, caja y usuario
+        $this->debug_log('DEBUG FINAL ANTES DE DECIDIR: sales_total=' . $sales_total . ', transactions_total=' . $transactions_total . ', wc_total=' . $wc_total);
         
-        // Si no hay ventas pero sí hay transacciones, usar las transacciones
-        if ($total_amount == 0 && ($transactions_total > 0 || $sales_total > 0 || $wc_total > 0)) {
-            $total_amount = $transactions_total + $sales_total + $wc_total;
+        // Reiniciar totales si es 0 para evitar interferencias
+        if ($sales_total === null || $sales_total === '') { $sales_total = 0; }
+        if ($transactions_total === null || $transactions_total === '') { $transactions_total = 0; }
+        if ($wc_total === null || $wc_total === '') { $wc_total = 0; }
+        
+        // NUEVA LÓGICA: Priorizamos valores diferentes a 0
+        if ($user_id > 0) {
+            // Si hay filtro por usuario específico, sumamos solo los valores filtrados por usuario
+            $total_amount = $transactions_total + $sales_total;
+            $this->debug_log("*** FILTRADO POR USUARIO {$user_id}: {$total_amount} (transacciones: {$transactions_total}, ventas: {$sales_total})");
+        } else {
+            // Sumar todos los valores positivos para obtener un total completo
+            $total_amount = 0;
+            if ($sales_total > 0) $total_amount += $sales_total;
+            if ($transactions_total > 0) $total_amount += $transactions_total;
+            if ($wc_total > 0) $total_amount += $wc_total;
+            
+            // Si no hay valores positivos pero sí hay valores negativos, usar el valor negativo
+            if ($total_amount == 0) {
+                $total_amount = $transactions_total + $sales_total + $wc_total;
+            }
+            
+            $this->debug_log("*** TOTAL SIN FILTRO DE USUARIO: {$total_amount}");
+        }
+        
+        // Protección adicional contra valores no numéricos
+        if (!is_numeric($total_amount)) {
+            $total_amount = 0;
+            $this->debug_log("ADVERTENCIA: Total no numérico, estableciendo a 0");
         }
         
         // Calcular el total esperado (inicial + transacciones)
         $expected_amount = $initial_amount + $total_amount;
-        
-        // Agregar información de depuración para ayudar a resolver el problema
-        $debug_info['date_requested'] = $date;
-        $debug_info['register_id'] = $register_id;
         $debug_info['user_id'] = $user_id;
         $debug_info['tables_checked'] = [
             'pos_sales' => $sales_table_exists,
@@ -1107,22 +1240,120 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
             'esperado' => $expected_amount
         ]);
         
+        // Intentar obtener pagos en efectivo directamente si no se pudo filtrar antes o si hay filtro de usuario
+        if ($total_amount == 0 || $user_id > 0) {
+            // Intentar consulta alternativa en pos_payments si existe
+            $pos_payments_table = $wpdb->prefix . 'pos_payments';
+            $payments_table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$pos_payments_table}'") === $pos_payments_table;
+            $this->debug_log("Verificando tabla pos_payments: " . ($payments_table_exists ? 'EXISTE' : 'NO EXISTE'));
+            
+            if ($payments_table_exists) {
+                // Primero detectar la columna de fecha en la tabla pos_payments
+                $payments_columns = $wpdb->get_results("DESCRIBE {$pos_payments_table}");
+                $payments_column_names = array_map(function($col) { return $col->Field; }, $payments_columns);
+                $this->debug_log("Columnas en pos_payments: " . implode(", ", $payments_column_names));
+                
+                // Buscar columna de fecha en pos_payments
+                $payments_date_column = '';
+                $date_columns_priority = ['date_created', 'created_at', 'date', 'timestamp'];
+                foreach ($payments_columns as $column) {
+                    foreach ($date_columns_priority as $priority_name) {
+                        if (strtolower($column->Field) === strtolower($priority_name)) {
+                            $payments_date_column = $column->Field;
+                            break 2;
+                        }
+                    }
+                }
+                
+                // Si no encontramos columna por nombre exacto, buscar por patrón
+                if (!$payments_date_column) {
+                    foreach ($payments_columns as $column) {
+                        if (strpos(strtolower($column->Field), 'date') !== false || 
+                            strpos(strtolower($column->Field), 'created') !== false || 
+                            strpos(strtolower($column->Field), 'time') !== false) {
+                            $payments_date_column = $column->Field;
+                            break;
+                        }
+                    }
+                }
+                
+                // Agrupar correctamente las condiciones OR con paréntesis
+                $payments_query = "SELECT SUM(amount) as cash_total FROM {$pos_payments_table} 
+                                  WHERE (payment_method LIKE '%cash%' OR payment_method LIKE '%efectivo%')";
+                
+                if ($payments_date_column) {
+                    $payments_query .= " AND DATE({$payments_date_column}) = %s";
+                    $payments_args = [$date];
+                    
+                    // Filtrar por usuario si se especifica un ID de usuario
+                    if ($user_id > 0) {
+                        // Buscar columna de usuario en pos_payments
+                        $user_column = '';
+                        $user_column_options = ['user_id', 'created_by', 'cashier_id', 'seller_id', 'employee_id'];
+                        
+                        foreach ($user_column_options as $option) {
+                            if (in_array($option, $payments_column_names)) {
+                                $user_column = $option;
+                                break;
+                            }
+                        }
+                        
+                        if ($user_column) {
+                            $payments_query .= " AND {$user_column} = %d";
+                            $payments_args[] = $user_id;
+                            $this->debug_log("Filtrando pos_payments por usuario: {$user_id} usando columna {$user_column}");
+                        } else {
+                            $this->debug_log("No se encontró columna de usuario en pos_payments. Columnas disponibles: " . implode(", ", $payments_column_names));
+                        }
+                    }
+                    
+                    $prepared_payments_query = $wpdb->prepare($payments_query, $payments_args);
+                    $this->debug_log("Query pos_payments: {$prepared_payments_query}");
+                    $payments_result = $wpdb->get_var($prepared_payments_query);
+                    
+                    if ($payments_result && (float)$payments_result > 0) {
+                        $payments_total = (float)$payments_result;
+                        
+                        // Si hay filtro de usuario y ya tenemos otros totales, sumamos en vez de reemplazar
+                        if ($user_id > 0 && $total_amount > 0) {
+                            // Sumamos el total de pos_payments al total existente
+                            $this->debug_log("Sumando pos_payments:{$payments_total} al total existente:{$total_amount}");
+                            $total_amount += $payments_total;
+                        } else {
+                            // Si no hay filtro o no hay otros totales, simplemente asignamos
+                            $this->debug_log("Asignando total de pos_payments:{$payments_total} como total final");
+                            $total_amount = $payments_total;
+                        }
+                        
+                        $expected_amount = $initial_amount + $total_amount;
+                        
+                        $debug_info['payments_query'] = $prepared_payments_query;
+                        $debug_info['payments_total'] = $payments_total;
+                    }
+                }
+            }
+        }
+        
         // Retornar los datos calculados
         wp_send_json_success([
             'initial_amount' => number_format($initial_amount, 2, '.', ''),
             'total_transactions' => number_format($total_amount, 2, '.', ''),
             'expected_amount' => number_format($expected_amount, 2, '.', ''),
-            // Au00f1adimos informaciu00f3n bu00e1sica de debug para diagnosticar el problema
+            // Añadimos información detallada de debug para diagnóstico
             'debug_info' => [
                 'sales_total' => $sales_total,
                 'transactions_total' => $transactions_total,
                 'wc_total' => $wc_total,
                 'final_total' => $total_amount,
-                'date' => $date
+                'date' => $date,
+                'payment_method_filtering' => true
             ]
         ]);
     }
-
+    
+    /**
+     * AJAX: Diagnóstico para problemas de cálculo
+     */
     public function ajax_diagnostic() {
         // Verificar permisos
         if (!current_user_can('administrator')) {
@@ -1685,10 +1916,10 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
                 COALESCE(SUM(total), 0) as amount,
                 (SELECT COALESCE(SUM(total), 0) 
                  FROM {$wpdb->prefix}pos_sales 
-                 WHERE DATE(created_at) = DATE(DATE_SUB(%s, INTERVAL 1 DAY))
+                 WHERE DATE(date_created) = DATE(DATE_SUB(%s, INTERVAL 1 DAY))
                 ) as prev_day_amount
             FROM {$wpdb->prefix}pos_sales 
-            WHERE DATE(created_at) = %s",
+            WHERE DATE(date_created) = %s",
             $current_date,
             $current_date
         ));
@@ -1713,7 +1944,7 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
                 SUM(actual_amount) as total_amount,
                 SUM(actual_amount - expected_amount) as total_difference
             FROM {$wpdb->prefix}pos_closures
-            WHERE DATE(created_at) BETWEEN %s AND %s",
+            WHERE DATE(date_created) BETWEEN %s AND %s",
             $current_month_start,
             $current_date
         ));
@@ -1730,7 +1961,7 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         $prev_month_data = $wpdb->get_row($wpdb->prepare(
             "SELECT SUM(actual_amount) as total_amount
             FROM {$wpdb->prefix}pos_closures
-            WHERE DATE(created_at) BETWEEN %s AND %s",
+            WHERE DATE(date_created) BETWEEN %s AND %s",
             $prev_month_start,
             $prev_month_end
         ));
@@ -1764,9 +1995,9 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
                 SUM(actual_amount) as amount,
                 SUM(actual_amount - expected_amount) as difference
             FROM {$wpdb->prefix}pos_closures
-            WHERE DATE(created_at) BETWEEN %s AND %s
-            GROUP BY DATE(created_at)
-            ORDER BY DATE(created_at) ASC",
+            WHERE DATE(date_created) BETWEEN %s AND %s
+            GROUP BY DATE(date_created)
+            ORDER BY DATE(date_created) ASC",
             $start_date,
             $end_date
         ));

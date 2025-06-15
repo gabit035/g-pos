@@ -552,11 +552,22 @@ class WP_POS_Reports_Data {
                 $payment_method_raw = self::get_payment_method_from_sale($sale['id'], $sale);
                 $payment_method_display = self::format_payment_method($payment_method_raw);
 
-                // Formatear datos de la venta
+                // Formatear datos de la venta y asegurar que la fecha sea válida
+                
+                // Validar y formatear la fecha correctamente
+                $date_value = !empty($sale['date_created']) ? $sale['date_created'] : $sale['date'];
+                
+                // Verificar que la fecha sea válida
+                $valid_date = !empty($date_value) && $date_value !== '0000-00-00 00:00:00';
+                $formatted_date = $valid_date ? date('Y-m-d H:i:s', strtotime($date_value)) : current_time('mysql');
+                
+                // Log para debugging
+                error_log("Fecha original: {$date_value}, Fecha validada: {$formatted_date}");
+                
                 $formatted_sale = [
                     'id' => (int)$sale['id'],
-                    'date' => $sale['date'],
-                    'created_at' => $sale['date'],
+                    'date' => $formatted_date,
+                    'created_at' => $formatted_date,
                     'total' => (float)$sale['total'],
                     'status' => $sale['status'],
                     'payment_method' => $payment_method_raw,

@@ -106,11 +106,26 @@ if ($has_sales && !empty($sales_data[0])) {
 
 // Función helper para formatear fechas de manera amigable
 function wp_pos_format_friendly_date($date_string) {
+    // Validar la fecha de entrada
     if (empty($date_string) || $date_string === '0000-00-00 00:00:00') {
         return __('Fecha no disponible', 'wp-pos');
     }
     
-    $timestamp = strtotime($date_string);
+    // Intentar convertir la fecha a timestamp
+    $timestamp = false;
+    if (is_numeric($date_string)) {
+        // Si ya es un timestamp numérico
+        $timestamp = intval($date_string);
+    } else {
+        // Intentar convertir string a timestamp
+        $timestamp = strtotime($date_string);
+    }
+    
+    // Verificar que el timestamp sea válido
+    if ($timestamp === false || $timestamp <= 0) {
+        return __('Fecha no disponible', 'wp-pos');
+    }
+    
     $current_time = current_time('timestamp');
     $diff = $current_time - $timestamp;
     
@@ -362,12 +377,39 @@ $average_sale = $sales_count > 0 ? $displayed_sales_total / $sales_count : 0;
                             
                             <td class="col-date">
                                 <div class="date-info">
+                                    <?php 
+                                    // Debug - Ver formato real de la fecha
+                                    $date_debug = "Formato original: " . var_export($sale_date, true);
+                                    
+                                    // Intentar convertir cualquier formato de fecha válido
+                                    $timestamp = false;
+                                    if (!empty($sale_date) && $sale_date !== '0000-00-00 00:00:00') {
+                                        // Intentar diferentes formatos de fecha
+                                        if (is_numeric($sale_date)) {
+                                            // Si es un timestamp
+                                            $timestamp = intval($sale_date);
+                                        } else {
+                                            $timestamp = strtotime($sale_date);
+                                        }
+                                    }
+                                    
+                                    // Determinar si la fecha es válida
+                                    $valid_date = ($timestamp !== false && $timestamp > 0);
+                                    
+                                    // Añadir información de debug
+                                    if ($valid_date) {
+                                        $date_debug .= " - Timestamp: " . $timestamp . " - Fecha: " . date('Y-m-d H:i:s', $timestamp);
+                                    } else {
+                                        $date_debug .= " - Inválido";
+                                    }
+                                    error_log("DEBUG FECHA: " . $date_debug);
+                                    ?>
                                     <span class="sale-date friendly-date" 
-                                          title="<?php echo esc_attr(date_i18n('d/m/Y H:i:s', strtotime($sale_date))); ?>">
+                                          title="<?php echo $valid_date ? esc_attr(date_i18n('d/m/Y H:i:s', $timestamp)) : 'Fecha no disponible'; ?>">
                                         <?php echo wp_pos_format_friendly_date($sale_date); ?>
                                     </span>
                                     <small class="exact-date">
-                                        <?php echo date_i18n('H:i', strtotime($sale_date)); ?>
+                                        <?php echo $valid_date ? date_i18n('H:i', $timestamp) : '--:--'; ?>
                                     </small>
                                     <?php if (!empty($note)): ?>
                                         <small class="text-muted d-block note-indicator" title="<?php echo esc_attr($note); ?>">
