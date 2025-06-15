@@ -3,7 +3,7 @@
  * Plugin Name: WP-POS (Point of Sale)
  * Plugin URI: https://wppossystem.com
  * Description: Sistema completo de punto de venta para WordPress con compatibilidad opcional con WooCommerce
- * Version: 1.0.0
+ * Version: 1.2.1
  * Author: WP-POS Team
  * Author URI: https://wppossystem.com
  * Text Domain: wp-pos
@@ -121,7 +121,7 @@ function wp_pos__e($text, $domain = 'wp-pos') {
 }
 
 // Definir constantes básicas del plugin
-define('WP_POS_VERSION', '1.0.0');
+define('WP_POS_VERSION', '1.2.1');
 define('WP_POS_PLUGIN_FILE', __FILE__);
 define('WP_POS_PLUGIN_DIR', trailingslashit(plugin_dir_path(__FILE__)));
 define('WP_POS_PLUGIN_URL', trailingslashit(plugin_dir_url(__FILE__)));
