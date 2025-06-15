@@ -91,7 +91,7 @@ class WP_POS_Reports_Module {
         $this->init_config();
         $this->setup_actions();
         $this->load_dependencies();
-        $this->maybe_create_tables();
+        $this->check_database_version(); // Ejecutar migración automáticamente
         $this->initialized = true;
     }
 
@@ -151,6 +151,12 @@ class WP_POS_Reports_Module {
         
         // NUEVO: Hook para diagnóstico de métodos de pago
         add_action('wp_ajax_wp_pos_debug_payment_methods', array($this, 'ajax_debug_payment_methods'));
+        
+        // NUEVO: Hook para forzar migración de base de datos
+        add_action('wp_ajax_wp_pos_force_migration', array($this, 'ajax_force_migration'));
+        
+        // NUEVO: Hook para verificar estado de migración
+        add_action('wp_ajax_wp_pos_check_migration_status', array($this, 'ajax_check_migration_status'));
         
         // Hooks para limpieza de datos
         add_action('wp_pos_daily_cleanup', array($this, 'daily_cleanup'));
@@ -288,7 +294,7 @@ class WP_POS_Reports_Module {
             cost decimal(12,4) DEFAULT NULL,
             payment_method varchar(50) DEFAULT 'cash',
             status varchar(20) DEFAULT 'completed',
-            currency varchar(10) DEFAULT 'USD',
+            currency varchar(10) DEFAULT '$',
             exchange_rate decimal(10,4) DEFAULT 1.0000,
             notes text DEFAULT NULL,
             date_created datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -382,7 +388,7 @@ class WP_POS_Reports_Module {
             $sales_table = $wpdb->prefix . 'pos_sales';
             
             $columns_to_add = array(
-                'currency' => "ALTER TABLE $sales_table ADD COLUMN currency varchar(10) DEFAULT 'USD'",
+                'currency' => "ALTER TABLE $sales_table ADD COLUMN currency varchar(10) DEFAULT '$'",
                 'exchange_rate' => "ALTER TABLE $sales_table ADD COLUMN exchange_rate decimal(10,4) DEFAULT 1.0000",
                 'receipt_number' => "ALTER TABLE $sales_table ADD COLUMN receipt_number varchar(50) DEFAULT NULL",
             );
@@ -409,6 +415,23 @@ class WP_POS_Reports_Module {
             foreach ($indexes_to_add as $index_sql) {
                 // Verificar si el índice ya existe antes de crearlo
                 $wpdb->query($index_sql);
+            }
+        }
+        
+        // Migración específica para corregir el símbolo de moneda de USD a $ (versión 1.2.0)
+        if (version_compare($from_version, '1.2.0', '<')) {
+            $sales_table = $wpdb->prefix . 'pos_sales';
+            
+            // Actualizar registros existentes que tengan 'USD' por '$'
+            $wpdb->query($wpdb->prepare(
+                "UPDATE $sales_table SET currency = %s WHERE currency = %s",
+                '$',
+                'USD'
+            ));
+            
+            if ($this->config['enable_debug']) {
+                $updated_rows = $wpdb->rows_affected;
+                error_log("WP-POS Reports: Se actualizaron $updated_rows registros de USD a $ en la tabla $sales_table");
             }
         }
         
@@ -846,6 +869,46 @@ class WP_POS_Reports_Module {
     }
 
     /**
+     * NUEVO: Handler AJAX para forzar migración de base de datos
+     *
+     * @since 1.0.0
+     */
+    public function ajax_force_migration() {
+        check_ajax_referer('wp_pos_reports_nonce', 'security');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Permisos insuficientes'));
+        }
+        
+        // Forzar migración
+        $result = $this->force_database_migration();
+        
+        if ($result['success']) {
+            wp_send_json_success($result);
+        } else {
+            wp_send_json_error($result);
+        }
+    }
+
+    /**
+     * NUEVO: Handler AJAX para verificar estado de migración
+     *
+     * @since 1.0.0
+     */
+    public function ajax_check_migration_status() {
+        check_ajax_referer('wp_pos_reports_nonce', 'security');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Permisos insuficientes'));
+        }
+        
+        // Verificar estado de migración
+        $status = $this->check_migration_status();
+        
+        wp_send_json_success($status);
+    }
+
+    /**
      * Scripts en el footer de admin
      *
      * @since 1.0.0
@@ -881,7 +944,69 @@ class WP_POS_Reports_Module {
                     });
                 };
                 
-                console.log('WP-POS Reports Module cargado. Usa debugPaymentMethods() para diagnóstico.');
+                // NUEVO: Función para forzar migración de base de datos
+                window.forcePOSMigration = function() {
+                    console.log('Ejecutando migración forzada de base de datos...');
+                    
+                    if (!confirm('¿Estás seguro de que quieres ejecutar la migración de base de datos? Esto actualizará todos los registros de USD a $. ')) {
+                        return;
+                    }
+                    
+                    jQuery.post(ajaxurl, {
+                        action: 'wp_pos_force_migration',
+                        security: '<?php echo wp_create_nonce('wp_pos_reports_nonce'); ?>'
+                    }, function(response) {
+                        console.log('Migración completada:', response);
+                        if (response.success) {
+                            console.log('Resultado:', response.data);
+                            alert('Migración completada exitosamente: ' + response.data.message);
+                        } else {
+                            console.error('Error en migración:', response.data.message);
+                            alert('Error: ' + response.data.message);
+                        }
+                    }).fail(function(xhr, status, error) {
+                        console.error('Error AJAX:', {xhr, status, error});
+                        alert('Error de conexión al ejecutar migración');
+                    });
+                };
+                
+                // NUEVO: Función para verificar estado de migración
+                window.checkPOSMigrationStatus = function() {
+                    console.log('Verificando estado de migración...');
+                    
+                    jQuery.post(ajaxurl, {
+                        action: 'wp_pos_check_migration_status',
+                        security: '<?php echo wp_create_nonce('wp_pos_reports_nonce'); ?>'
+                    }, function(response) {
+                        console.log('Estado de migración:', response);
+                        if (response.success) {
+                            const data = response.data;
+                            console.log('Detalles:', data);
+                            
+                            let message = `Estado de Migración POS:\n\n`;
+                            message += `Versión DB: ${data.current_version}\n`;
+                            message += `Versión Módulo: ${data.module_version}\n`;
+                            message += `Migración necesaria: ${data.migration_needed ? 'SÍ' : 'NO'}\n`;
+                            message += `Registros USD: ${data.usd_records}\n`;
+                            message += `Registros $: ${data.peso_records}\n`;
+                            message += `Total registros: ${data.total_records}\n`;
+                            message += `Migración completa: ${data.migration_complete ? 'SÍ' : 'NO'}`;
+                            
+                            alert(message);
+                        } else {
+                            console.error('Error al verificar estado:', response.data.message);
+                            alert('Error: ' + response.data.message);
+                        }
+                    }).fail(function(xhr, status, error) {
+                        console.error('Error AJAX:', {xhr, status, error});
+                        alert('Error de conexión al verificar estado');
+                    });
+                };
+                
+                console.log('WP-POS Reports Module cargado. Funciones disponibles:');
+                console.log('- debugPaymentMethods() - Diagnóstico de métodos de pago');
+                console.log('- forcePOSMigration() - Forzar migración de USD a $');
+                console.log('- checkPOSMigrationStatus() - Verificar estado de migración');
             </script>
             <?php
         }
@@ -992,6 +1117,94 @@ class WP_POS_Reports_Module {
      */
     public function get_version() {
         return $this->version;
+    }
+
+    /**
+     * Forzar verificación y migración de base de datos
+     * Útil para testing o cuando se necesita ejecutar manualmente
+     *
+     * @since 1.2.0
+     * @return array Resultado de la migración
+     */
+    public function force_database_migration() {
+        $current_version = get_option('wp_pos_reports_db_version', '1.0.0');
+        
+        if ($this->config['enable_debug']) {
+            error_log("WP-POS Reports: Forzando migración desde versión $current_version a {$this->version}");
+        }
+        
+        // Ejecutar migración
+        $this->upgrade_database($current_version, $this->version);
+        update_option('wp_pos_reports_db_version', $this->version);
+        
+        return [
+            'success' => true,
+            'from_version' => $current_version,
+            'to_version' => $this->version,
+            'message' => "Migración completada de $current_version a {$this->version}"
+        ];
+    }
+
+    /**
+     * Verificar estado actual de la migración
+     * Útil para diagnosticar si quedan registros con USD
+     *
+     * @since 1.2.0
+     * @return array Estado de la migración
+     */
+    public function check_migration_status() {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . 'pos_sales';
+        
+        // Verificar si la tabla existe
+        $table_exists = $wpdb->get_var($wpdb->prepare(
+            "SHOW TABLES LIKE %s",
+            $table_name
+        ));
+        
+        if (!$table_exists) {
+            return [
+                'table_exists' => false,
+                'message' => 'La tabla pos_sales no existe'
+            ];
+        }
+        
+        // Contar registros con USD
+        $usd_count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table_name} WHERE currency = %s",
+            'USD'
+        ));
+        
+        // Contar registros con $
+        $peso_count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table_name} WHERE currency = %s",
+            '$'
+        ));
+        
+        // Contar total de registros
+        $total_count = $wpdb->get_var("SELECT COUNT(*) FROM {$table_name}");
+        
+        // Obtener versión actual
+        $current_version = get_option('wp_pos_reports_db_version', '1.0.0');
+        
+        return [
+            'table_exists' => true,
+            'current_version' => $current_version,
+            'module_version' => $this->version,
+            'migration_needed' => version_compare($current_version, '1.2.0', '<'),
+            'usd_records' => (int)$usd_count,
+            'peso_records' => (int)$peso_count,
+            'total_records' => (int)$total_count,
+            'migration_complete' => ($usd_count == 0),
+            'message' => sprintf(
+                'Versión DB: %s | Registros USD: %d | Registros $: %d | Total: %d',
+                $current_version,
+                $usd_count,
+                $peso_count,
+                $total_count
+            )
+        ];
     }
 }
 

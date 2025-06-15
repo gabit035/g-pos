@@ -1,0 +1,111 @@
+===============================================
+  CONFIGURACIÓN DE AUTO-REFRESH - MÓDULO CIERRES
+===============================================
+
+📄 PROBLEMA RESUELTO:
+El módulo de cierres se actualizaba automáticamente causando molestias.
+
+🔧 SOLUCIÓN IMPLEMENTADA:
+Se han creado controles configurables para manejar las actualizaciones automáticas.
+
+===============================================
+  CÓMO USAR LA CONFIGURACIÓN
+===============================================
+
+✅ ARCHIVO DE CONFIGURACIÓN:
+   📁 /assets/js/closures-config.js
+
+✅ OPCIONES DISPONIBLES:
+
+1. 🔄 CÁLCULO AUTOMÁTICO INICIAL:
+   - autoCalculate: true/false
+   - autoCalculateDelay: milisegundos (ej: 1000 = 1 segundo)
+
+2. 🧹 LIMPIEZA AUTOMÁTICA DE INDICADORES:
+   - autoCleanup: true/false  
+   - cleanupInterval: milisegundos (ej: 30000 = 30 segundos)
+
+3. 🐛 MODO DEBUG:
+   - debugMode: true/false
+
+===============================================
+  CONFIGURACIONES PREESTABLECIDAS
+===============================================
+
+🔕 MODO SILENCIOSO (Sin actualizaciones automáticas):
+   Descomenta estas líneas en closures-config.js:
+   // window.WP_POS_CONFIG.autoCalculate = false;
+   // window.WP_POS_CONFIG.autoCleanup = false;
+
+⚖️ MODO CONSERVATIVO (Actualizaciones menos frecuentes):
+   Descomenta estas líneas en closures-config.js:
+   // window.WP_POS_CONFIG.autoCalculateDelay = 3000;  // 3 segundos
+   // window.WP_POS_CONFIG.cleanupInterval = 60000;    // 60 segundos
+
+⚡ MODO AGRESIVO (Actualizaciones más frecuentes):
+   Descomenta estas líneas en closures-config.js:
+   // window.WP_POS_CONFIG.autoCalculateDelay = 500;   // 0.5 segundos
+   // window.WP_POS_CONFIG.cleanupInterval = 10000;    // 10 segundos
+
+===============================================
+  DIAGNÓSTICO DE PROBLEMAS
+===============================================
+
+🔍 PARA DIAGNOSTICAR PROBLEMAS:
+1. Abre closures-config.js
+2. Cambia: debugMode: false → debugMode: true
+3. Abre la consola del navegador (F12)
+4. Observa los mensajes que aparecen
+
+🚫 SI SIGUES TENIENDO PROBLEMAS:
+- Verifica si hay extensiones del navegador causando reloads
+- Revisa si hay JavaScript personalizado en tu tema
+- Comprueba la configuración del servidor/hosting
+
+===============================================
+  ARCHIVOS MODIFICADOS
+===============================================
+
+✅ /assets/js/loader-cleanup.js
+   - Intervalo cambiado de 3 a 30 segundos
+   - Control configurable de auto-limpieza
+
+✅ /views/closure-form.php
+   - Cálculo inicial ahora es opcional
+   - Controles de configuración añadidos
+
+✅ /assets/js/closures-config.js (NUEVO)
+   - Archivo central de configuración
+   - Presets disponibles
+
+✅ /class-closures-module.php
+   - Registro del script de configuración
+   - Carga automática en todas las vistas
+
+===============================================
+  ESTADO ACTUAL
+===============================================
+
+📊 CONFIGURACIÓN POR DEFECTO:
+- ✅ Cálculo automático inicial: HABILITADO (1 segundo de delay)
+- ✅ Auto-limpieza: HABILITADA (cada 30 segundos - antes era 3)
+- ❌ Modo debug: DESHABILITADO
+
+🎯 RESULTADO:
+- Reducción significativa de actualizaciones automáticas
+- Control total sobre el comportamiento del módulo  
+- Posibilidad de deshabilitar completamente el auto-refresh
+
+===============================================
+  SOPORTE TÉCNICO
+===============================================
+
+📞 SI NECESITAS AYUDA:
+1. Activa el modo debug
+2. Revisa los logs en la consola del navegador
+3. Prueba diferentes configuraciones
+4. Contacta al desarrollador con los logs
+
+🔄 VERSIÓN: 1.0.0
+📅 FECHA: 2025-06-15
+👨‍💻 ESTADO: COMPLETAMENTE IMPLEMENTADO ✅

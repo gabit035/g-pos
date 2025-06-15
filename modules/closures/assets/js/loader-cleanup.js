@@ -56,12 +56,22 @@ jQuery(document).ready(function($) {
     });
     
     // Forzar limpieza periódica si hay indicadores visibles
-    setInterval(function() {
-        if ($('.wp-pos-loading, .blockUI, .wp-pos-loading-global').length > 0) {
-            console.log('⚠ufe0f Detectados indicadores persistentes - limpieza automática');
-            window.cleanupAllLoaders();
-        }
-    }, 3000); // Verificar cada 3 segundos
+    // CONFIGURACIÓN: Reducir frecuencia de auto-limpieza para evitar actualizaciones constantes
+    var autoCleanupEnabled = window.WP_POS_CONFIG?.autoCleanup !== false; // Permitir deshabilitar
+    var cleanupInterval = window.WP_POS_CONFIG?.cleanupInterval || 30000; // 30 segundos por defecto (era 3)
+    
+    if (autoCleanupEnabled) {
+        setInterval(function() {
+            if ($('.wp-pos-loading, .blockUI, .wp-pos-loading-global').length > 0) {
+                console.log('⚠️ Detectados indicadores persistentes - limpieza automática (intervalo: ' + (cleanupInterval/1000) + 's)');
+                window.cleanupAllLoaders();
+            }
+        }, cleanupInterval);
+        
+        console.log('🔄 Auto-limpieza de indicadores habilitada (cada ' + (cleanupInterval/1000) + ' segundos)');
+    } else {
+        console.log('⏹️ Auto-limpieza de indicadores DESHABILITADA');
+    }
     
     // Agregar botón de limpieza manual para casos excepcionales (solo visible para administradores)
     if ($('body').hasClass('wp-pos-admin') || $('body').hasClass('wp-admin')) {

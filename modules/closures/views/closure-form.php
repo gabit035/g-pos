@@ -66,12 +66,12 @@ $current_view = 'form';
                 </div>
                 
                 <div class="wp-pos-form-field">
-                    <label for="initial-amount"><?php _e('Caja Inicial', 'wp-pos'); ?> <span class="dashicons dashicons-info" title="Este valor se obtiene del último cierre, pero puedes modificarlo según sea necesario"></span></label>
+                    <label for="initial-amount"><?php _e('Caja Inicial', 'wp-pos'); ?></label>
                     <div class="wp-pos-input-with-icon">
-                        <input type="number" id="initial-amount" name="initial_amount" min="0" step="0.01" required style="background-color: #f9f9f9;">
+                        <input type="number" id="initial-amount" name="initial_amount" min="0" step="0.01" required placeholder="0.00">
                         <span class="wp-pos-input-icon dashicons dashicons-money-alt"></span>
                     </div>
-                    <small class="wp-pos-field-description" style="display:block; margin-top:5px; color:#666;">El monto inicial se calcula automáticamente basado en el último cierre.</small>
+                    <small class="wp-pos-field-description" style="display:block; margin-top:5px; color:#666;">Ingrese manualmente el monto inicial de caja.</small>
                 </div>
             </div>
             
@@ -132,9 +132,9 @@ $current_view = 'form';
                 </div>
                 <div class="wp-pos-form-column">
                     <div class="wp-pos-form-field">
-                        <label for="payment-method-credit"><?php _e('Crédito', 'wp-pos'); ?></label>
+                        <label for="payment-method-card"><?php _e('Tarjeta', 'wp-pos'); ?></label>
                         <div class="wp-pos-input-with-icon">
-                            <input type="number" id="payment-method-credit" name="payment_methods[credit]" value="0" min="0" step="0.01">
+                            <input type="number" id="payment-method-card" name="payment_methods[card]" value="0" min="0" step="0.01">
                             <span class="wp-pos-input-icon dashicons dashicons-credit-card"></span>
                         </div>
                     </div>
@@ -144,21 +144,36 @@ $current_view = 'form';
             <div class="wp-pos-form-row">
                 <div class="wp-pos-form-column">
                     <div class="wp-pos-form-field">
-                        <label for="payment-method-debit"><?php _e('Débito', 'wp-pos'); ?></label>
-                        <div class="wp-pos-input-with-icon">
-                            <input type="number" id="payment-method-debit" name="payment_methods[debit]" value="0" min="0" step="0.01">
-                            <span class="wp-pos-input-icon dashicons dashicons-card"></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="wp-pos-form-column">
-                    <div class="wp-pos-form-field">
                         <label for="payment-method-transfer"><?php _e('Transferencia', 'wp-pos'); ?></label>
                         <div class="wp-pos-input-with-icon">
                             <input type="number" id="payment-method-transfer" name="payment_methods[transfer]" value="0" min="0" step="0.01">
                             <span class="wp-pos-input-icon dashicons dashicons-bank"></span>
                         </div>
                     </div>
+                </div>
+                <div class="wp-pos-form-column">
+                    <div class="wp-pos-form-field">
+                        <label for="payment-method-check"><?php _e('Cheque', 'wp-pos'); ?></label>
+                        <div class="wp-pos-input-with-icon">
+                            <input type="number" id="payment-method-check" name="payment_methods[check]" value="0" min="0" step="0.01">
+                            <span class="wp-pos-input-icon dashicons dashicons-money"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="wp-pos-form-row">
+                <div class="wp-pos-form-column">
+                    <div class="wp-pos-form-field">
+                        <label for="payment-method-other"><?php _e('Otro', 'wp-pos'); ?></label>
+                        <div class="wp-pos-input-with-icon">
+                            <input type="number" id="payment-method-other" name="payment_methods[other]" value="0" min="0" step="0.01">
+                            <span class="wp-pos-input-icon dashicons dashicons-admin-generic"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="wp-pos-form-column">
+                    <!-- Campo vacío para mantener el layout -->
                 </div>
             </div>
         </div>
@@ -227,13 +242,17 @@ $current_view = 'form';
                 <span class="dashicons dashicons-search" style="margin-top: 3px; margin-right: 5px;"></span>
                 <?php _e('Diagnóstico de ventas', 'wp-pos'); ?>
             </button>
-            <button type="button" id="calculate-amounts" class="wp-pos-button wp-pos-button-secondary">
-                <span class="dashicons dashicons-calculator" style="margin-top: 3px; margin-right: 5px;"></span>
-                <?php _e('Calcular montos', 'wp-pos'); ?>
+            <button type="button" id="calculate-amounts" class="button button-primary button-large">
+                <span class="dashicons dashicons-calculator"></span>
+                <?php _e('Calcular Montos', 'wp-pos'); ?>
             </button>
-            <button type="submit" class="wp-pos-button wp-pos-button-primary">
-                <span class="dashicons dashicons-saved" style="margin-top: 3px; margin-right: 5px;"></span>
+            <button type="submit" class="button button-primary button-large">
+                <span class="dashicons dashicons-yes-alt"></span>
                 <?php _e('Guardar Cierre', 'wp-pos'); ?>
+            </button>
+            <button type="button" id="forensic-investigation" class="button button-secondary button-large" style="background:#f5e6ea; color:#c00; border-color:#c00; margin-left:10px;">
+                <span class="dashicons dashicons-search"></span>
+                <?php _e('Investigación Forense', 'wp-pos'); ?>
             </button>
         </div>
     </form>
@@ -283,12 +302,12 @@ jQuery(document).ready(function($) {
                     <div class="wp-pos-repeater-field-group">
                         <div class="wp-pos-repeater-field">
                             <input type="text" class="expense-description" name="expenses[${expenseCounter}][description]" 
-                                   placeholder="Descripción" value="${description}" required>
+                                   placeholder="Descripción" value="${description}">
                         </div>
                         <div class="wp-pos-repeater-field">
                             <div class="wp-pos-input-with-icon">
                                 <input type="number" class="expense-amount" name="expenses[${expenseCounter}][amount]" 
-                                       placeholder="0.00" value="${amount}" min="0" step="0.01" required>
+                                       placeholder="0.00" value="${amount}" min="0" step="0.01">
                                 <span class="wp-pos-input-icon dashicons dashicons-money-alt"></span>
                             </div>
                         </div>
@@ -315,12 +334,12 @@ jQuery(document).ready(function($) {
                     <div class="wp-pos-repeater-field-group">
                         <div class="wp-pos-repeater-field">
                             <input type="text" class="income-description" name="incomes[${incomeCounter}][description]" 
-                                   placeholder="Descripción" value="${description}" required>
+                                   placeholder="Descripción" value="${description}">
                         </div>
                         <div class="wp-pos-repeater-field">
                             <div class="wp-pos-input-with-icon">
                                 <input type="number" class="income-amount" name="incomes[${incomeCounter}][amount]" 
-                                       placeholder="0.00" value="${amount}" min="0" step="0.01" required>
+                                       placeholder="0.00" value="${amount}" min="0" step="0.01">
                                 <span class="wp-pos-input-icon dashicons dashicons-money-alt"></span>
                             </div>
                         </div>
@@ -385,9 +404,10 @@ jQuery(document).ready(function($) {
     function updateTotals(incomeTotal, expensesTotal) {
         // Obtener los valores de métodos de pago
         var cashAmount = parseFloat($('#payment-method-cash').val()) || 0;
-        var creditAmount = parseFloat($('#payment-method-credit').val()) || 0;
-        var debitAmount = parseFloat($('#payment-method-debit').val()) || 0;
+        var cardAmount = parseFloat($('#payment-method-card').val()) || 0;
         var transferAmount = parseFloat($('#payment-method-transfer').val()) || 0;
+        var checkAmount = parseFloat($('#payment-method-check').val()) || 0;
+        var otherAmount = parseFloat($('#payment-method-other').val()) || 0;
         
         // Obtener el monto total de ventas (validando que exista)
         var totalAmount = parseFloat($('#total-amount').val()) || 0;
@@ -404,7 +424,7 @@ jQuery(document).ready(function($) {
         console.log('Total del día calculado: ' + dayTotal + ' (Ventas: ' + totalAmount + ', Ingresos: ' + incomeTotal + ', Egresos: ' + expensesTotal + ')');
         
         // Verificar si el total coincide con la suma de métodos de pago
-        var paymentMethodsTotal = cashAmount + creditAmount + debitAmount + transferAmount;
+        var paymentMethodsTotal = cashAmount + cardAmount + transferAmount + checkAmount + otherAmount;
         paymentMethodsTotal = parseFloat(paymentMethodsTotal.toFixed(2));
         
         // Mostrar advertencia si los métodos de pago no suman el total esperado
@@ -448,29 +468,51 @@ jQuery(document).ready(function($) {
     addExpenseField();
     addIncomeField();
     
-    // Función para calcular la diferencia entre el monto real contado y el esperado
+    // Función para recalcular el monto esperado cuando cambia el monto inicial manualmente
+    function recalculateExpectedAmount() {
+        // Obtener el monto inicial (ingresado por el usuario)
+        var initialAmount = parseFloat($('#initial-amount').val()) || 0;
+        
+        // Obtener el total de transacciones
+        var totalAmount = parseFloat($('#total-amount').val()) || 0;
+        
+        // Calcular el monto esperado = monto inicial + total transacciones
+        var expectedAmount = initialAmount + totalAmount;
+        
+        // Actualizar el campo del monto esperado
+        $('#expected-amount').val(expectedAmount.toFixed(2));
+        
+        // Dar feedback visual breve para mostrar que cambió
+        $('#expected-amount').addClass('wp-pos-highlight-change');
+        setTimeout(function() {
+            $('#expected-amount').removeClass('wp-pos-highlight-change');
+        }, 1500);
+        
+        // Recalcular la diferencia con el nuevo monto esperado
+        calculateDifference();
+        
+        console.log('Monto esperado recalculado: ' + expectedAmount.toFixed(2) + 
+                   ' (Inicial: ' + initialAmount.toFixed(2) + 
+                   ' + Total: ' + totalAmount.toFixed(2) + ')');
+    }
+    
+    // Función para calcular la diferencia entre monto esperado y contado
     function calculateDifference() {
-        // Obtener valores con validación numérica
-        var expectedAmount = parseFloat($('#expected-amount').val()) || 0;
-        var countedAmount = parseFloat($('#counted-amount').val()) || 0;
+        var expected = parseFloat($('#expected-amount').val()) || 0;
+        var counted = parseFloat($('#counted-amount').val()) || 0;
+        var difference = counted - expected;
         
-        // Calcular la diferencia con precisión de 2 decimales
-        var difference = parseFloat((countedAmount - expectedAmount).toFixed(2));
+        // Actualizar el campo de diferencia
+        $('#difference-amount').val(difference.toFixed(2));
         
-        // Actualizar campo de diferencia
-        $('#difference-amount').val(difference);
-        
-        // Aplicar clases según el valor (positivo, negativo o cero)
-        if (difference > 0) {
-            $('#difference-amount').removeClass('wp-pos-negative').addClass('wp-pos-positive');
-        } else if (difference < 0) {
-            $('#difference-amount').removeClass('wp-pos-positive').addClass('wp-pos-negative');
+        // Aplicar clases de estilo según el valor
+        if (difference < 0) {
+            $('#difference-amount').addClass('wp-pos-negative').removeClass('wp-pos-positive');
+        } else if (difference > 0) {
+            $('#difference-amount').addClass('wp-pos-positive').removeClass('wp-pos-negative');
         } else {
             $('#difference-amount').removeClass('wp-pos-positive wp-pos-negative');
         }
-        
-        console.log('Diferencia calculada: ' + difference + ' (Contado: ' + countedAmount + ', Esperado: ' + expectedAmount + ')');
-        return difference;
     }
     
     // Función para actualizar feedback visual en los campos
@@ -490,8 +532,13 @@ jQuery(document).ready(function($) {
             calculateDifference();
         });
         
+        // Recalcular monto esperado cuando cambia manualmente el monto inicial
+        $('#initial-amount').off('input.expected').on('input.expected', function() {
+            recalculateExpectedAmount();
+        });
+        
         // Conectar eventos para métodos de pago
-        $('#payment-method-cash, #payment-method-credit, #payment-method-debit, #payment-method-transfer').off('input.payments')
+        $('#payment-method-cash, #payment-method-card, #payment-method-transfer, #payment-method-check, #payment-method-other').off('input.payments')
             .on('input.payments', function() {
                 validatePaymentMethods();
             });
@@ -500,11 +547,12 @@ jQuery(document).ready(function($) {
     // Función para validar que los métodos de pago sumen el total esperado
     function validatePaymentMethods() {
         var cashAmount = parseFloat($('#payment-method-cash').val()) || 0;
-        var creditAmount = parseFloat($('#payment-method-credit').val()) || 0;
-        var debitAmount = parseFloat($('#payment-method-debit').val()) || 0;
+        var cardAmount = parseFloat($('#payment-method-card').val()) || 0;
         var transferAmount = parseFloat($('#payment-method-transfer').val()) || 0;
+        var checkAmount = parseFloat($('#payment-method-check').val()) || 0;
+        var otherAmount = parseFloat($('#payment-method-other').val()) || 0;
         
-        var methodsTotal = parseFloat((cashAmount + creditAmount + debitAmount + transferAmount).toFixed(2));
+        var methodsTotal = parseFloat((cashAmount + cardAmount + transferAmount + checkAmount + otherAmount).toFixed(2));
         var dayTotal = parseFloat($('#day-total').val()) || 0;
         
         // Si hay diferencias mayores a 1 cent, mostrar advertencia
@@ -581,9 +629,20 @@ jQuery(document).ready(function($) {
                     var newTotal = parseFloat(response.data.total_transactions) || 0;
                     
                     // Actualizar los valores en los campos
-                    $('#initial-amount').val(response.data.initial_amount);
+                    // $('#initial-amount').val(response.data.initial_amount); // DESHABILITADO: No calcular automáticamente el monto inicial
                     $('#total-amount').val(response.data.total_transactions);
                     $('#expected-amount').val(response.data.expected_amount);
+                    
+                    // Actualizar campos por método de pago si están disponibles
+                    if (response.data.payment_methods) {
+                        $('#payment-method-cash').val(response.data.payment_methods.cash || '0.00');
+                        $('#payment-method-card').val(response.data.payment_methods.card || '0.00');
+                        $('#payment-method-transfer').val(response.data.payment_methods.transfer || '0.00');
+                        $('#payment-method-check').val(response.data.payment_methods.check || '0.00');
+                        $('#payment-method-other').val(response.data.payment_methods.other || '0.00');
+                        
+                        console.log('Métodos de pago actualizados:', response.data.payment_methods);
+                    }
                     
                     // Destacar visualmente el cambio si hay diferencia
                     if (previousTotal !== newTotal) {
@@ -663,19 +722,218 @@ jQuery(document).ready(function($) {
         calculateDifference();
     });
     
-    // Inicializar con un cálculo
-    calculateAmounts();
+    // CONFIGURACIÓN DE ACTUALIZACIÓN AUTOMÁTICA
+    window.WP_POS_CONFIG = window.WP_POS_CONFIG || {};
+    window.WP_POS_CONFIG.autoCalculate = window.WP_POS_CONFIG.autoCalculate !== false; // Por defecto habilitado
+    window.WP_POS_CONFIG.autoCalculateDelay = window.WP_POS_CONFIG.autoCalculateDelay || 1000; // 1 segundo por defecto
+    window.WP_POS_CONFIG.autoCleanup = window.WP_POS_CONFIG.autoCleanup !== false; // Por defecto habilitado
+    window.WP_POS_CONFIG.cleanupInterval = window.WP_POS_CONFIG.cleanupInterval || 30000; // 30 segundos
     
-    // Vincular el envío del formulario
-    $('#wp-pos-closure-form').on('submit', function(e) {
-        e.preventDefault();
-        saveClosure();
-    });
+    // Ejecutar primer cálculo después de cargar la página (OPCIONAL)
+    // Esto asegura que los totales iniciales sean correctos
+    if (window.WP_POS_CONFIG.autoCalculate) {
+        console.log(' Cálculo automático inicial habilitado (delay: ' + window.WP_POS_CONFIG.autoCalculateDelay + 'ms)');
+        setTimeout(function() {
+            calculateAmounts();
+        }, window.WP_POS_CONFIG.autoCalculateDelay);
+    } else {
+        console.log(' Cálculo automático inicial DESHABILITADO');
+        console.log(' Usa el botón "Calcular Montos" para actualizar manualmente');
+    }
     
+    // Función para calcular los montos
+    function calculateAmounts(callback) {
+        var date = $('#closure-date').val();
+        var register_id = $('#closure-register').val();
+        var user_id = $('#closure-user').val();
+        
+        // Depurar valores enviados
+        console.log('Enviando parámetros a calculateAmounts:', {
+            date: date,
+            register_id: register_id,
+            user_id: user_id
+        });
+        
+        if (!date || !register_id) {
+            if (typeof callback === 'function') callback();
+            return;
+        }
+        
+        $.ajax({
+            url: '<?php echo $ajax_url; ?>',
+            type: 'POST',
+            data: {
+                action: 'wp_pos_closures_calculate_amounts',
+                nonce: '<?php echo $ajax_nonce; ?>',
+                date: date,
+                register_id: register_id,
+                user_id: user_id
+            },
+            beforeSend: function() {
+                // Ocultar todos los indicadores de carga activos
+                hideAllLoaders();
+                
+                // Mostrar indicador de carga para este proceso
+                $('.wp-pos-form-actions button').prop('disabled', true);
+                
+                // Usar el sistema centralizado de gestión de cargadores
+                if (loaders.calculate) {
+                    // Limpiar cargador existente primero
+                    WP_POS_LoaderManager.remove(loaders.calculate);
+                }
+                
+                // Crear un nuevo cargador usando el sistema centralizado
+                loaders.calculate = WP_POS_LoaderManager.create('.wp-pos-form-actions', {
+                    text: 'Calculando montos...',
+                    size: 'medium',
+                    overlay: false
+                });
+            },
+            success: function(response) {
+                if (response.success) {
+                    var data = response.data;
+                    
+                    // Actualizar los campos principales
+                    // $('#initial-amount').val(data.initial_amount); // DESHABILITADO: No calcular automáticamente el monto inicial
+                    $('#total-amount').val(data.total_transactions);
+                    $('#expected-amount').val(data.expected_amount);
+                    
+                    // Actualizar campos por método de pago si están disponibles
+                    if (data.payment_methods) {
+                        $('#payment-method-cash').val(data.payment_methods.cash || '0.00');
+                        $('#payment-method-card').val(data.payment_methods.card || '0.00');
+                        $('#payment-method-transfer').val(data.payment_methods.transfer || '0.00');
+                        $('#payment-method-check').val(data.payment_methods.check || '0.00');
+                        $('#payment-method-other').val(data.payment_methods.other || '0.00');
+                        
+                        console.log('Métodos de pago actualizados:', data.payment_methods);
+                    }
+                    
+                    // Mostrar en consola para depuración
+                    console.log('Datos recibidos del servidor:', data);
+                    
+                    // Recalcular diferencia
+                    calculateDifference();
+                    
+                    // Ejecutar callback si existe
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                } else {
+                    WP_POS_Notifications.error(response.data.message || 'Error al calcular los montos');
+                    if (typeof callback === 'function') callback();
+                }
+            },
+            error: function() {
+                WP_POS_Notifications.error('Error de conexión al calcular los montos');
+                if (typeof callback === 'function') callback();
+            },
+            complete: function() {
+                // Quitar indicador de carga
+                $('.wp-pos-form-actions button').prop('disabled', false);
+                hideAllLoaders();
+            }
+        });
+    }
+    
+    // Función para guardar el cierre
+    function saveClosure() {
+        // Prevenir envíos duplicados
+        if (isSubmitting) {
+            console.log('Ya hay un envío en progreso, no se puede enviar nuevamente');
+            WP_POS_Notifications.warning('Ya se está procesando la solicitud, espere un momento');
+            return false;
+        }
+        
+        // Activar bandera de envío
+        isSubmitting = true;
+        
+        var formData = $('#wp-pos-closure-form').serialize();
+        
+        $.ajax({
+            url: '<?php echo $ajax_url; ?>',
+            type: 'POST',
+            data: formData + '&action=wp_pos_closures_save_closure&nonce=<?php echo $ajax_nonce; ?>',
+            beforeSend: function() {
+                // Mostrar indicador de carga mejorado
+                $('.wp-pos-form-actions button').prop('disabled', true);
+                hideAllLoaders();
+                loaders.save = WP_POS_LoaderManager.create('.wp-pos-form-actions', {
+                    text: 'Guardando cierre...',
+                    size: 'medium',
+                    overlay: false
+                });
+            },
+            success: function(response) {
+                // Desactivar bandera de envío
+                isSubmitting = false;
+                
+                if (response.success) {
+                    WP_POS_Notifications.success(response.data.message || 'Cierre guardado correctamente');
+                    // Opcional: redirigir a otra página o restablecer el formulario
+                    $('#wp-pos-closure-form')[0].reset();
+                    // Establecer la fecha actual nuevamente
+                    var today = new Date();
+                    var formattedDate = today.toISOString().substring(0, 10);
+                    $('#closure-date').val(formattedDate);
+                    // No calcular nuevamente
+                } else {
+                    WP_POS_Notifications.error(response.data.message || 'Error al guardar el cierre');
+                }
+            },
+            error: function() {
+                // Desactivar bandera de envío en caso de error
+                isSubmitting = false;
+                WP_POS_Notifications.error('Error de conexión al guardar el cierre');
+            },
+            complete: function() {
+                // Quitar indicador de carga
+                $('.wp-pos-form-actions button').prop('disabled', false);
+                hideAllLoaders();
+            }
+        });
+    }
+    
+    // Función para formatear valores monetarios para mostrar en la interfaz
+    function formatMoney(amount) {
+        return '$' + parseFloat(amount || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    }
+
+    // Función para formatear fechas para mostrar en la interfaz
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleString('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+    
+    // Añadir estilos CSS para los efectos visuales de feedback
+    $('<style>' +
+        '.wp-pos-loading-field {' +
+        '    background-color: #f0f0f0 !important;' +
+        '    color: #999 !important;' +
+        '    transition: all 0.3s ease;' +
+        '}' +
+        '.wp-pos-highlight-change {' +
+        '    background-color: #fffacd !important;' +
+        '    transition: background-color 2s ease;' +
+        '}' +
+    '</style>').appendTo('head');
+
     // Botón de diagnóstico
     $('#diagnose-sales').on('click', function() {
         var date = $('#closure-date').val();
         diagnoseCalculations(date);
+    });
+    
+    // Botón de investigación forense
+    $('#forensic-investigation').on('click', function() {
+        runForensicInvestigation();
     });
     
     // Función para diagnóstico de ventas
@@ -749,6 +1007,83 @@ jQuery(document).ready(function($) {
         });
     }
     
+    // Función para la investigación forense detallada
+    function runForensicInvestigation() {
+        const userId = $('#closure-user').val();
+        const date = $('#closure-date').val();
+        
+        // Verificar que un usuario está seleccionado
+        if (!userId) {
+            WP_POS_Notifications.warning('Debe seleccionar un usuario específico para la investigación forense');
+            return;
+        }
+        
+        // Verificar si el modal forense ya existe
+        if ($('#forensic-modal').length === 0) {
+            // Crear modal para investigación forense
+            $('body').append(`
+                <div id="forensic-modal" class="wp-pos-modal" style="display:none;">
+                    <div class="wp-pos-modal-content" style="max-width:90%; width:1000px;">
+                        <span class="wp-pos-modal-close">&times;</span>
+                        <h2 style="color:#c00; margin-top:0;">
+                            🕵️‍♂️ Investigación Forense: Caso Efectivo Fantasma
+                        </h2>
+                        <div id="forensic-content" style="max-height:70vh; overflow-y:auto;"></div>
+                    </div>
+                </div>
+            `);
+            
+            // Manejar cierre del modal
+            $('#forensic-modal .wp-pos-modal-close').on('click', function() {
+                $('#forensic-modal').hide();
+            });
+        }
+        
+        // Mostrar modal y mensaje de carga
+        $('#forensic-modal').show();
+        $('#forensic-content').html(`
+            <div class="wp-pos-loading" style="text-align:center; padding:20px;">
+                <span class="spinner is-active" style="float:none; width:20px; height:20px; margin:0 auto;"></span>
+                <p>🔍 Investigando el caso del efectivo fantasma...</p>
+            </div>
+        `);
+        
+        // Ejecutar la investigación forense mediante AJAX
+        $.ajax({
+            url: '<?php echo admin_url('admin-ajax.php'); ?>',
+            type: 'POST',
+            data: {
+                action: 'wp_pos_forensic_investigation',
+                nonce: '<?php echo $ajax_nonce; ?>',
+                user_id: userId,
+                date: date
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#forensic-content').html(response.data.html);
+                    
+                    // Destacar filas con posibles problemas
+                    setTimeout(function() {
+                        $('.forensic-alert-row').addClass('highlight-alert');
+                    }, 500);
+                } else {
+                    $('#forensic-content').html(`
+                        <div class="wp-pos-error" style="padding:20px;">
+                            <p>${response.data.message || 'Error al ejecutar la investigación forense'}</p>
+                        </div>
+                    `);
+                }
+            },
+            error: function() {
+                $('#forensic-content').html(`
+                    <div class="wp-pos-error" style="padding:20px;">
+                        <p>Error de conexión durante la investigación forense</p>
+                    </div>
+                `);
+            }
+        });
+    }
+    
     // Función para calcular la diferencia entre monto esperado y contado
     function calculateDifference() {
         var expected = parseFloat($('#expected-amount').val()) || 0;
@@ -768,184 +1103,10 @@ jQuery(document).ready(function($) {
         }
     }
     
-    // Función para calcular los montos
-    function calculateAmounts(callback) {
-        var date = $('#closure-date').val();
-        var register_id = $('#closure-register').val();
-        var user_id = $('#closure-user').val();
-        
-        // Depurar valores enviados
-        console.log('Enviando parámetros a calculateAmounts:', {
-            date: date,
-            register_id: register_id,
-            user_id: user_id
-        });
-        
-        if (!date || !register_id) {
-            if (typeof callback === 'function') callback();
-            return;
-        }
-        
-        $.ajax({
-            url: '<?php echo $ajax_url; ?>',
-            type: 'POST',
-            data: {
-                action: 'wp_pos_closures_calculate_amounts',
-                nonce: '<?php echo $ajax_nonce; ?>',
-                date: date,
-                register_id: register_id,
-                user_id: user_id
-            },
-            beforeSend: function() {
-                // Ocultar todos los indicadores de carga activos
-                hideAllLoaders();
-                
-                // Mostrar indicador de carga para este proceso
-                $('.wp-pos-form-actions button').prop('disabled', true);
-                
-                // Usar el sistema centralizado de gestión de cargadores
-                if (loaders.calculate) {
-                    // Limpiar cargador existente primero
-                    WP_POS_LoaderManager.remove(loaders.calculate);
-                }
-                
-                // Crear un nuevo cargador usando el sistema centralizado
-                loaders.calculate = WP_POS_LoaderManager.create('.wp-pos-form-actions', {
-                    text: 'Calculando montos...',
-                    size: 'medium',
-                    overlay: false
-                });
-            },
-            success: function(response) {
-                if (response.success) {
-                    var data = response.data;
-                    
-                    // Actualizar los campos
-                    $('#initial-amount').val(data.initial_amount);
-                    $('#total-amount').val(data.total_transactions);
-                    $('#expected-amount').val(data.expected_amount);
-                    
-                    // Mostrar en consola para depuración
-                    console.log('Datos recibidos del servidor:', data);
-                    
-                    // Recalcular diferencia
-                    calculateDifference();
-                    
-                    // Ejecutar callback si existe
-                    if (typeof callback === 'function') {
-                        callback();
-                    }
-                } else {
-                    WP_POS_Notifications.error(response.data.message || 'Error al calcular los montos');
-                    if (typeof callback === 'function') callback();
-                }
-            },
-            error: function() {
-                WP_POS_Notifications.error('Error de conexión al calcular los montos');
-                if (typeof callback === 'function') callback();
-            },
-            complete: function() {
-                // Quitar indicador de carga
-                $('.wp-pos-form-actions button').prop('disabled', false);
-                hideAllLoaders();
-            }
-        });
-    }
-    
-    // Función para guardar el cierre
-    function saveClosure() {
-        // Prevenir envíos duplicados
-        if (isSubmitting) {
-            console.log('Ya hay un envío en progreso, no se puede enviar nuevamente');
-            WP_POS_Notifications.warning('Ya se está procesando la solicitud, espere un momento');
-            return false;
-        }
-        
-        // Activar bandera de envío
-        isSubmitting = true;
-        
-        var formData = $('#wp-pos-closure-form').serialize();
-        
-        $.ajax({
-            url: '<?php echo $ajax_url; ?>',
-            type: 'POST',
-            data: formData + '&action=wp_pos_closures_save_closure&nonce=<?php echo $ajax_nonce; ?>',
-            beforeSend: function() {
-                // Mostrar indicador de carga mejorado
-                $('.wp-pos-form-actions button').prop('disabled', true);
-                hideAllLoaders();
-                loaders.save = WP_POS_LoaderManager.create('.wp-pos-form-actions', {
-                    text: 'Guardando cierre...',
-                    size: 'medium',
-                    overlay: false
-                });
-            },
-            success: function(response) {
-                // Desactivar bandera de envío
-                isSubmitting = false;
-                
-                if (response.success) {
-                    WP_POS_Notifications.success(response.data.message || 'Cierre guardado correctamente');
-                    // Opcional: redirigir a otra página o restablecer el formulario
-                    $('#wp-pos-closure-form')[0].reset();
-                    // Establecer la fecha actual nuevamente
-                    var today = new Date();
-                    var formattedDate = today.toISOString().substring(0, 10);
-                    $('#closure-date').val(formattedDate);
-                    // Calcular nuevamente
-                    calculateAmounts();
-                } else {
-                    WP_POS_Notifications.error(response.data.message || 'Error al guardar el cierre');
-                }
-            },
-            error: function() {
-                // Desactivar bandera de envío en caso de error
-                isSubmitting = false;
-                WP_POS_Notifications.error('Error de conexión al guardar el cierre');
-            },
-            complete: function() {
-                // Quitar indicador de carga
-                $('.wp-pos-form-actions button').prop('disabled', false);
-                hideAllLoaders();
-            }
-        });
-    }
-    
-    // Función para formatear valores monetarios para mostrar en la interfaz
-    function formatMoney(amount) {
-        return '$' + parseFloat(amount || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-    }
-
-    // Función para formatear fechas para mostrar en la interfaz
-    function formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleString('es-AR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-    
-    // Añadir estilos CSS para los efectos visuales de feedback
-    $('<style>' +
-        '.wp-pos-loading-field {' +
-        '    background-color: #f0f0f0 !important;' +
-        '    color: #999 !important;' +
-        '    transition: all 0.3s ease;' +
-        '}' +
-        '.wp-pos-highlight-change {' +
-        '    background-color: #fffacd !important;' +
-        '    transition: background-color 2s ease;' +
-        '}' +
-    '</style>').appendTo('head');
-
-    // Ejecutar primer cálculo después de cargar la página
-    // Esto asegura que los totales iniciales sean correctos
-    setTimeout(function() {
-        calculateAmounts();
-    }, 500);
+    // Vincular el envío del formulario
+    $('#wp-pos-closure-form').on('submit', function(e) {
+        e.preventDefault();
+        saveClosure();
+    });
 });
 </script>
