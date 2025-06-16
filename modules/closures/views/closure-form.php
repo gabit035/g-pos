@@ -68,7 +68,7 @@ $current_view = 'form';
                 <div class="wp-pos-form-field">
                     <label for="initial-amount"><?php _e('Caja Inicial', 'wp-pos'); ?></label>
                     <div class="wp-pos-input-with-icon">
-                        <input type="number" id="initial-amount" name="initial_amount" min="0" step="0.01" required placeholder="0.00">
+                        <input type="number" id="initial-amount" name="initial_amount" min="0" step="0.01" required placeholder="0.00" value="0.00">
                         <span class="wp-pos-input-icon dashicons dashicons-money-alt"></span>
                     </div>
                     <small class="wp-pos-field-description" style="display:block; margin-top:5px; color:#666;">Ingrese manualmente el monto inicial de caja.</small>
@@ -110,70 +110,6 @@ $current_view = 'form';
                 <div class="wp-pos-input-with-icon">
                     <input type="number" id="difference-amount" name="difference" readonly>
                     <span class="wp-pos-input-icon dashicons dashicons-chart-line"></span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Desglose por método de pago -->
-        <div class="wp-pos-form-section-title">
-            <h3><?php _e('Desglose por método de pago', 'wp-pos'); ?></h3>
-        </div>
-        
-        <div class="wp-pos-payment-methods-breakdown">
-            <div class="wp-pos-form-row">
-                <div class="wp-pos-form-column">
-                    <div class="wp-pos-form-field">
-                        <label for="payment-method-cash"><?php _e('Efectivo', 'wp-pos'); ?></label>
-                        <div class="wp-pos-input-with-icon">
-                            <input type="number" id="payment-method-cash" name="payment_methods[cash]" value="0" min="0" step="0.01">
-                            <span class="wp-pos-input-icon dashicons dashicons-money-alt"></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="wp-pos-form-column">
-                    <div class="wp-pos-form-field">
-                        <label for="payment-method-card"><?php _e('Tarjeta', 'wp-pos'); ?></label>
-                        <div class="wp-pos-input-with-icon">
-                            <input type="number" id="payment-method-card" name="payment_methods[card]" value="0" min="0" step="0.01">
-                            <span class="wp-pos-input-icon dashicons dashicons-credit-card"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="wp-pos-form-row">
-                <div class="wp-pos-form-column">
-                    <div class="wp-pos-form-field">
-                        <label for="payment-method-transfer"><?php _e('Transferencia', 'wp-pos'); ?></label>
-                        <div class="wp-pos-input-with-icon">
-                            <input type="number" id="payment-method-transfer" name="payment_methods[transfer]" value="0" min="0" step="0.01">
-                            <span class="wp-pos-input-icon dashicons dashicons-bank"></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="wp-pos-form-column">
-                    <div class="wp-pos-form-field">
-                        <label for="payment-method-check"><?php _e('Cheque', 'wp-pos'); ?></label>
-                        <div class="wp-pos-input-with-icon">
-                            <input type="number" id="payment-method-check" name="payment_methods[check]" value="0" min="0" step="0.01">
-                            <span class="wp-pos-input-icon dashicons dashicons-money"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="wp-pos-form-row">
-                <div class="wp-pos-form-column">
-                    <div class="wp-pos-form-field">
-                        <label for="payment-method-other"><?php _e('Otro', 'wp-pos'); ?></label>
-                        <div class="wp-pos-input-with-icon">
-                            <input type="number" id="payment-method-other" name="payment_methods[other]" value="0" min="0" step="0.01">
-                            <span class="wp-pos-input-icon dashicons dashicons-admin-generic"></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="wp-pos-form-column">
-                    <!-- Campo vacío para mantener el layout -->
                 </div>
             </div>
         </div>
@@ -464,16 +400,77 @@ jQuery(document).ready(function($) {
         recalculateTotals();
     });
     
+    // Función para crear campos de método de pago dinámicamente si no existen
+    function createPaymentMethodFieldIfNeeded(method, amount) {
+        // Verificar si ya existe un campo para este método
+        if ($('input[data-method="' + method + '"]').length === 0) {
+            var methodLabel = method.charAt(0).toUpperCase() + method.slice(1);
+            var methodIcon = 'admin-generic';
+            
+            // Mapeo de iconos conocidos
+            var iconMap = {
+                'cash': 'money-alt',
+                'card': 'credit-card',
+                'transfer': 'bank',
+                'check': 'money',
+                'other': 'admin-generic'
+            };
+            
+            if (iconMap[method]) {
+                methodIcon = iconMap[method];
+            }
+            
+            // Obtener el contenedor de métodos de pago
+            var $container = $('#dynamic-payment-methods');
+            var $lastRow = $container.find('.wp-pos-form-row').last();
+            
+            // Si la última fila tiene 2 columnas o no hay filas, crear una nueva fila
+            if ($lastRow.length === 0 || $lastRow.find('.wp-pos-form-column').length >= 2) {
+                $lastRow = $('<div class="wp-pos-form-row"></div>');
+                $container.append($lastRow);
+            }
+            
+            // Crear la nueva columna con el campo de entrada
+            var $column = $('<div class="wp-pos-form-column"></div>');
+            var $field = $('<div class="wp-pos-form-field"></div>');
+            var $label = $('<label for="payment-method-' + method + '">' + methodLabel + '</label>');
+            var $inputContainer = $('<div class="wp-pos-input-with-icon"></div>');
+            var $input = $('<input type="number" id="payment-method-' + method + '" name="payment_methods[' + method + ']" value="' + parseFloat(amount).toFixed(2) + '" min="0" step="0.01" class="payment-method-input" data-method="' + method + '">');
+            var $icon = $('<span class="wp-pos-input-icon dashicons dashicons-' + methodIcon + '"></span>');
+            
+            // Construir la estructura del DOM
+            $inputContainer.append($input).append($icon);
+            $field.append($label).append($inputContainer);
+            $column.append($field);
+            $lastRow.append($column);
+        } else {
+            // Si el campo ya existe, solo actualizar el valor
+            $('input[data-method="' + method + '"]').val(parseFloat(amount).toFixed(2));
+        }
+    }
+    
+    // Manejar cambios en los campos de métodos de pago (delegación de eventos para elementos dinámicos)
+    $(document).on('input', '.payment-method-input', function() {
+        recalculateTotals();
+    });
+    
     // Inicializar con al menos un campo de egreso e ingreso vacío
     addExpenseField();
     addIncomeField();
     
     // Función para recalcular el monto esperado cuando cambia el monto inicial manualmente
     function recalculateExpectedAmount() {
-        // Obtener el monto inicial (ingresado por el usuario)
-        var initialAmount = parseFloat($('#initial-amount').val()) || 0;
+        // Obtener el monto inicial (ingresado por el usuario) - asegurar que sea un número válido o 0
+        var initialAmountInput = $('#initial-amount').val().trim();
+        var initialAmount = initialAmountInput === '' || isNaN(initialAmountInput) ? 0 : parseFloat(initialAmountInput);
         
-        // Obtener el total de transacciones
+        // Asegurarse de que el campo tenga un valor válido
+        if (isNaN(initialAmount) || initialAmount < 0) {
+            initialAmount = 0;
+            $('#initial-amount').val('0.00');
+        }
+        
+        // Obtener el total de transacciones - asegurar que sea un número válido o 0
         var totalAmount = parseFloat($('#total-amount').val()) || 0;
         
         // Calcular el monto esperado = monto inicial + total transacciones
@@ -573,25 +570,32 @@ jQuery(document).ready(function($) {
     updateVisualFeedback();
     calculateDifference();
     
+    // Calcular montos automáticamente al cargar la página
+    calculateAmounts(function() {
+        // Una vez calculados los montos, actualizar el monto esperado
+        recalculateExpectedAmount();
+    });
+    
     // Actualizar cálculos cuando cambie la fecha, registro o usuario
-    $('#closure-date, #closure-register').on('change', function() {
+    $('#closure-register, #closure-date').on('change', function() {
+        // Recalcular montos cuando cambia algún filtro
         calculateAmounts();
     });
     
-    // Manejador específico para cambios en el selector de usuario
+    // Manejador para cambios en el selector de usuario
     $('#closure-user').on('change', function() {
-        var selectedUserId = $(this).val();
-        console.log('Usuario cambiado a:', selectedUserId);
+        var userId = $(this).val();
+        // Mostrar indicador de carga
+        $('#expected-amount').addClass('loading');
         
-        // Mostrar indicador visual de carga
-        $('#total-amount').val('Calculando...');
-        $('#total-amount').addClass('wp-pos-loading-field');
-        
-        // Forzar recálculo con usuario específico
-        forceRecalculateWithUser(selectedUserId);
+        // Recalcular montos basados en el usuario seleccionado
+        if (userId) {
+            forceRecalculateWithUser(userId);
+        } else {
+            calculateAmounts();
+        }
     });
-    
-    // Función especializada para recalcular con usuario específico
+    // Función especializada para recalcar con usuario específico
     function forceRecalculateWithUser(userId) {
         var date = $('#closure-date').val();
         var register_id = $('#closure-register').val();
@@ -629,8 +633,9 @@ jQuery(document).ready(function($) {
                     var newTotal = parseFloat(response.data.total_transactions) || 0;
                     
                     // Actualizar los valores en los campos
-                    // $('#initial-amount').val(response.data.initial_amount); // DESHABILITADO: No calcular automáticamente el monto inicial
-                    $('#total-amount').val(response.data.total_transactions);
+                    // Usar total_amount que ahora contiene solo el efectivo
+                    var cashTotal = response.data.total_amount || '0.00';
+                    $('#total-amount').val(cashTotal);
                     $('#expected-amount').val(response.data.expected_amount);
                     
                     // Actualizar campos por método de pago si están disponibles
@@ -655,10 +660,10 @@ jQuery(document).ready(function($) {
                     // Mostrar mensaje informativo sobre la actualización
                     WP_POS_Notifications.success('Total en efectivo actualizado correctamente');
                     
-                    // Actualizar cálculos derivados
+                    // Actualizar solo la diferencia y feedback visual
+                    // No llamar a recalculateTotals() aquí para evitar sumar todos los métodos
                     calculateDifference();
                     updateVisualFeedback();
-                    recalculateTotals();
                 } else {
                     // Mensaje de error con información detallada si está disponible
                     var errorMsg = response.data && response.data.message 
@@ -690,6 +695,7 @@ jQuery(document).ready(function($) {
             }
         });
     }
+    
     
     // Botón de actualización manual del total efectivo
     $('#refresh-total-amount').on('click', function() {
@@ -794,19 +800,27 @@ jQuery(document).ready(function($) {
                     var data = response.data;
                     
                     // Actualizar los campos principales
+                    // Mostrar solo el total en efectivo (cash_total) en lugar del total de transacciones
                     // $('#initial-amount').val(data.initial_amount); // DESHABILITADO: No calcular automáticamente el monto inicial
-                    $('#total-amount').val(data.total_transactions);
+                    $('#total-amount').val(data.cash_total || '0.00');
                     $('#expected-amount').val(data.expected_amount);
                     
                     // Actualizar campos por método de pago si están disponibles
                     if (data.payment_methods) {
-                        $('#payment-method-cash').val(data.payment_methods.cash || '0.00');
-                        $('#payment-method-card').val(data.payment_methods.card || '0.00');
-                        $('#payment-method-transfer').val(data.payment_methods.transfer || '0.00');
-                        $('#payment-method-check').val(data.payment_methods.check || '0.00');
-                        $('#payment-method-other').val(data.payment_methods.other || '0.00');
+                        // Resetear todos los campos de métodos de pago a 0
+                        $('.payment-method-input').val('0.00');
                         
-                        console.log('Métodos de pago actualizados:', data.payment_methods);
+                        // Actualizar con los valores devueltos
+                        $.each(data.payment_methods, function(method, amount) {
+                            // Buscar por name o data-method para mayor compatibilidad
+                            var input = $('input[name="payment_methods[' + method + ']"], input[data-method="' + method + '"]');
+                            if (input.length) {
+                                input.val(parseFloat(amount).toFixed(2));
+                            } else {
+                                // Si no existe el campo, lo creamos dinámicamente
+                                createPaymentMethodFieldIfNeeded(method, amount);
+                            }
+                        });
                     }
                     
                     // Mostrar en consola para depuración

@@ -85,7 +85,10 @@ function wp_pos_load_textdomain() {
     return $loaded;
 }
 
-// Cargar traducciones después de init para evitar advertencias en WordPress 6.7+
+// Cargar traducciones después de plugins_loaded para evitar advertencias en WordPress 6.7+
+add_action('plugins_loaded', 'wp_pos_load_textdomain', 5);
+
+// Cargar también en init como respaldo
 add_action('init', 'wp_pos_load_textdomain', 5);
 
 // Función segura para obtener texto traducido

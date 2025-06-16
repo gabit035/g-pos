@@ -51,30 +51,26 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         
         // Registrar el inicio del módulo en debug.log
         $this->debug_log('Módulo de Cierres de Caja inicializado');
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public function initialize() {
-        // Registrar acciones AJAX
-        add_action('wp_ajax_wp_pos_closures_get_registers', array($this, 'ajax_get_registers'));
-        add_action('wp_ajax_wp_pos_closures_add_register', array($this, 'ajax_add_register'));
-        add_action('wp_ajax_wp_pos_closures_update_register', array($this, 'ajax_update_register'));
-        add_action('wp_ajax_wp_pos_closures_delete_register', array($this, 'ajax_delete_register'));
-        add_action('wp_ajax_wp_pos_closures_get_closures', array($this, 'ajax_get_closures'));
-        add_action('wp_ajax_wp_pos_closures_save_closure', array($this, 'ajax_save_closure'));
-        add_action('wp_ajax_wp_pos_closures_calculate_amounts', array($this, 'ajax_calculate_amounts'));
-        add_action('wp_ajax_wp_pos_closures_diagnostic', array($this, 'ajax_diagnostic'));
-        add_action('wp_ajax_wp_pos_closures_get_closure_details', array($this, 'ajax_get_closure_details'));
-        add_action('wp_ajax_wp_pos_closures_update_status', array($this, 'ajax_update_status'));
-        add_action('wp_ajax_wp_pos_closures_delete_closure', array($this, 'ajax_delete_closure'));
-        add_action('wp_ajax_wp_pos_closures_dashboard_data', array($this, 'ajax_dashboard_data'));
-        add_action('wp_ajax_wp_pos_closures_get_status_history', array($this, 'ajax_get_status_history'));
-        add_action('wp_ajax_wp_pos_forensic_investigation', array($this, 'ajax_forensic_investigation'));
+        
+        // Registrar hooks AJAX
+        add_action('wp_ajax_wp_pos_closures_get_registers', [$this, 'ajax_get_registers']);
+        add_action('wp_ajax_wp_pos_closures_add_register', [$this, 'ajax_add_register']);
+        add_action('wp_ajax_wp_pos_closures_update_register', [$this, 'ajax_update_register']);
+        add_action('wp_ajax_wp_pos_closures_delete_register', [$this, 'ajax_delete_register']);
+        add_action('wp_ajax_wp_pos_closures_get_closures', [$this, 'ajax_get_closures']);
+        add_action('wp_ajax_wp_pos_closures_save_closure', [$this, 'ajax_save_closure']);
+        add_action('wp_ajax_wp_pos_closures_calculate_amounts', [$this, 'ajax_calculate_amounts']);
+        add_action('wp_ajax_wp_pos_closures_get_closure_details', [$this, 'ajax_get_closure_details']);
+        add_action('wp_ajax_wp_pos_closures_update_status', [$this, 'ajax_update_status']);
+        add_action('wp_ajax_wp_pos_closures_get_status_history', [$this, 'ajax_get_status_history']);
+        add_action('wp_ajax_wp_pos_closures_delete_closure', [$this, 'ajax_delete_closure']);
+        add_action('wp_ajax_wp_pos_closures_dashboard_data', [$this, 'ajax_dashboard_data']);
+        add_action('wp_ajax_wp_pos_closures_diagnostic', [$this, 'ajax_diagnostic']);
+        add_action('wp_ajax_wp_pos_get_available_payment_methods', [$this, 'ajax_get_available_payment_methods']);
+        add_action('wp_ajax_wp_pos_forensic_investigation', [$this, 'ajax_forensic_investigation']);
         
         // Inicializar base de datos si es necesario
-        add_action('admin_init', array($this, 'ensure_tables_exist'));
+        add_action('admin_init', [$this, 'ensure_tables_exist']);
     }
     
     /**
@@ -779,7 +775,12 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         // Sanear datos
         $closure_date = sanitize_text_field($_POST['closure_date']);
         $user_id = isset($_POST['user_id']) && !empty($_POST['user_id']) ? intval($_POST['user_id']) : get_current_user_id();
-        $initial_amount = (float) $_POST['initial_amount'];
+        
+        // Asegurar que el monto inicial sea un número válido, de lo contrario usar 0
+        $initial_amount = isset($_POST['initial_amount']) && is_numeric($_POST['initial_amount']) 
+            ? (float) $_POST['initial_amount'] 
+            : 0.00;
+            
         $expected_amount = (float) $_POST['expected_amount'];
         $counted_amount = (float) $_POST['counted_amount'];
         $difference = $counted_amount - $expected_amount;
@@ -1203,427 +1204,43 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
             $debug_info['wc_total'] = $wc_total;
         }
         
-        // El total de ventas en efectivo debe responder a los filtros de fecha, caja y usuario
-        $this->debug_log('DEBUG FINAL ANTES DE DECIDIR: sales_total=' . $sales_total . ', transactions_total=' . $transactions_total . ', wc_total=' . $wc_total);
-        
-        // NUEVO: Usar calculate_payment_method_amount para consistencia en el filtro por usuario
-        // Esto garantiza que el "Total Efectivo" principal use exactamente la misma lógica que los campos individuales
-        $consistent_cash_total = $this->calculate_payment_method_amount($register_id, $user_id, $date, 'cash');
-        
-        // Reiniciar totales si es 0 para evitar interferencias
-        if ($sales_total === null || $sales_total === '') { $sales_total = 0; }
-        if ($transactions_total === null || $transactions_total === '') { $transactions_total = 0; }
-        if ($wc_total === null || $wc_total === '') { $wc_total = 0; }
-        
-        // NUEVA LÓGICA: Priorizamos el cálculo consistente de efectivo
-        if ($user_id > 0) {
-            // Si hay filtro por usuario específico, usar el cálculo consistente de efectivo
-            $total_amount = $consistent_cash_total;
-            $this->debug_log("*** FILTRADO POR USUARIO {$user_id}: {$total_amount} (efectivo consistente: {$consistent_cash_total})");
-        } else {
-            // Para "Todos", usar el cálculo original si es mayor, o el consistente si no hay datos en las consultas originales
-            if ($sales_total > 0 || $transactions_total > 0 || $wc_total > 0) {
-                // Sumar todos los valores positivos para obtener un total completo
-                $total_amount = 0;
-                if ($sales_total > 0) $total_amount += $sales_total;
-                if ($transactions_total > 0) $total_amount += $transactions_total;
-                if ($wc_total > 0) $total_amount += $wc_total;
-                
-                // Si no hay valores positivos pero sí hay valores negativos, usar el valor negativo
-                if ($total_amount == 0) {
-                    $total_amount = $transactions_total + $sales_total + $wc_total;
-                }
-            } else {
-                // Si las consultas originales no devolvieron datos, usar el cálculo consistente
-                $total_amount = $consistent_cash_total;
-            }
-            
-            $this->debug_log("*** TOTAL SIN FILTRO DE USUARIO: {$total_amount} (consistente: {$consistent_cash_total})");
-        }
-        
-        // Protección adicional contra valores no numéricos
-        if (!is_numeric($total_amount)) {
-            $total_amount = 0;
-            $this->debug_log("ADVERTENCIA: Total no numérico, estableciendo a 0");
-        }
-        
-        // Calcular el total esperado (inicial manual + transacciones)
-        // El monto esperado debe ser igual a: monto inicial + total efectivo
-        $expected_amount = $initial_amount + $total_amount;
-        $debug_info['user_id'] = $user_id;
-        $debug_info['tables_checked'] = [
-            'pos_sales' => $sales_table_exists,
-            'pos_transactions' => $transactions_table_exists,
-            'wc_orders' => $wc_table_exists
-        ];
-        $debug_info['final_amount_used'] = $total_amount;
-        
-        // Asegurar que los valores sean cero si no hay datos
-        $initial_amount = $initial_amount ?: 0;
-        $total_amount = $total_amount ?: 0;
-        $expected_amount = $expected_amount ?: 0;
-        
-        $this->debug_log("Calculando montos para el cierre: ", [
-            'fecha' => $date,
-            'registro' => $register_id,
-            'usuario' => $user_id,
-            'monto_inicial' => $initial_amount,
-            'transacciones' => $total_amount,
-            'esperado' => $expected_amount
-        ]);
-        
-        // Intentar obtener pagos en efectivo directamente si no se pudo filtrar antes o si hay filtro de usuario
-        if ($total_amount == 0 || $user_id > 0) {
-            // Intentar consulta alternativa en pos_payments si existe
-            $pos_payments_table = $wpdb->prefix . 'pos_payments';
-            $payments_table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$pos_payments_table}'") === $pos_payments_table;
-            $this->debug_log("Verificando tabla pos_payments: " . ($payments_table_exists ? 'EXISTE' : 'NO EXISTE'));
-            
-            if ($payments_table_exists) {
-                // Primero detectar la columna de fecha en la tabla pos_payments
-                $payments_columns = $wpdb->get_results("DESCRIBE {$pos_payments_table}");
-                $payments_column_names = array_map(function($col) { return $col->Field; }, $payments_columns);
-                
-                // Buscar columna de fecha en pos_payments
-                $payments_date_column = '';
-                $date_columns_priority = ['date_created', 'created_at', 'date', 'timestamp'];
-                foreach ($payments_columns as $column) {
-                    foreach ($date_columns_priority as $priority_name) {
-                        if (strtolower($column->Field) === strtolower($priority_name)) {
-                            $payments_date_column = $column->Field;
-                            break 2;
-                        }
-                    }
-                }
-                
-                // Si no encontramos columna por nombre exacto, buscamos por patrones
-                if (!$payments_date_column) {
-                    foreach ($payments_columns as $column) {
-                        if (strpos(strtolower($column->Field), 'date') !== false || 
-                            strpos(strtolower($column->Field), 'created') !== false || 
-                            strpos(strtolower($column->Field), 'time') !== false) {
-                            $payments_date_column = $column->Field;
-                            break;
-                        }
-                    }
-                }
-                
-                // Agrupar correctamente las condiciones OR con paréntesis
-                $payments_query = "SELECT SUM(amount) as cash_total FROM {$pos_payments_table} 
-                                  WHERE (payment_method LIKE '%cash%' OR payment_method LIKE '%efectivo%')";
-                
-                if ($payments_date_column) {
-                    $payments_query .= " AND DATE({$payments_date_column}) = %s";
-                    $payments_args = [$date];
-                    
-                    // Filtrar por usuario si se especifica un ID de usuario
-                    if ($user_id > 0) {
-                        // Buscar columna de usuario en pos_payments
-                        $user_column = '';
-                        $user_column_options = ['user_id', 'created_by', 'cashier_id', 'seller_id', 'employee_id'];
-                        
-                        foreach ($user_column_options as $option) {
-                            if (in_array($option, $payments_column_names)) {
-                                $user_column = $option;
-                                break;
-                            }
-                        }
-                        
-                        if ($user_column) {
-                            $payments_query .= " AND {$user_column} = %d";
-                            $payments_args[] = $user_id;
-                            $this->debug_log("Filtrando pos_payments por usuario: {$user_id} usando columna {$user_column}");
-                        } else {
-                            $this->debug_log("No se encontró columna de usuario en pos_payments. Columnas disponibles: " . implode(", ", $payments_column_names));
-                        }
-                    }
-                    
-                    $prepared_payments_query = $wpdb->prepare($payments_query, $payments_args);
-                    $this->debug_log("Query pos_payments: {$prepared_payments_query}");
-                    $payments_result = $wpdb->get_var($prepared_payments_query);
-                    
-                    if ($payments_result && (float)$payments_result > 0) {
-                        $payments_total = (float)$payments_result;
-                        
-                        // Si hay filtro de usuario y ya tenemos otros totales, sumamos en vez de reemplazar
-                        if ($user_id > 0 && $total_amount > 0) {
-                            // Sumamos el total de pos_payments al total existente
-                            $this->debug_log("Sumando pos_payments:{$payments_total} al total existente:{$total_amount}");
-                            $total_amount += $payments_total;
-                        } else {
-                            // Si no hay filtro o no hay otros totales, simplemente asignamos
-                            $this->debug_log("Asignando total de pos_payments:{$payments_total} como total final");
-                            $total_amount = $payments_total;
-                        }
-                        
-                        $expected_amount = $initial_amount + $total_amount;
-                        
-                        $debug_info['payments_query'] = $prepared_payments_query;
-                        $debug_info['payments_total'] = $payments_total;
-                    }
-                }
-            }
-        }
-        
-        // 2. Verificar transacciones en la tabla pos_transactions si existe
-        $transactions_table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$pos_transactions_table}'") === $pos_transactions_table;
-        if ($transactions_table_exists) {
-            $trans_columns = $wpdb->get_results("DESCRIBE {$pos_transactions_table}");
-            $trans_column_names = array_map(function($col) { return $col->Field; }, $trans_columns);
-            
-            // Buscar columna de método de pago
-            $trans_payment_method = '';
-            foreach ($trans_column_names as $col) {
-                if (strpos(strtolower($col), 'payment_method') !== false || 
-                    strpos(strtolower($col), 'payment') !== false ||
-                    strpos(strtolower($col), 'method') !== false) {
-                    $trans_payment_method = $col;
-                    break;
-                }
-            }
-            
-            if ($trans_payment_method) {
-                // Consulta para calcular ventas y otros movimientos
-                $trans_query = "SELECT SUM(amount) as total_amount FROM {$pos_transactions_table} 
-                               WHERE register_id = %d 
-                               AND DATE(created_at) = %s";
-                $trans_args = [$register_id, $date];
-                
-                // Filtrar por método de pago en efectivo si la columna existe
-                if ($trans_payment_method) {
-                    // Posibles valores para efectivo
-                    $cash_values = ['cash', 'efectivo', '1', 'Cash', 'Efectivo', 'CASH', 'EFECTIVO'];
-                    $placeholders = array_fill(0, count($cash_values), '%s');
-                    $placeholder_string = implode(',', $placeholders);
-                    
-                    $trans_query .= " AND {$trans_payment_method} IN ({$placeholder_string})";
-                    $trans_args = array_merge($trans_args, $cash_values);
-                }
-                
-                // Si se especifica un usuario, buscar todas las posibles columnas de usuario
-                if ($user_id > 0) {
-                    $this->debug_log("Aplicando filtro por usuario {$user_id} en tabla pos_transactions");
-                    
-                    // Buscar todas las posibles columnas de usuario
-                    $possible_user_columns = ['user_id', 'created_by', 'employee_id', 'cashier_id', 'seller_id'];
-                    $found_user_column = false;
-                    
-                    foreach ($possible_user_columns as $possible_column) {
-                        if (in_array($possible_column, $trans_column_names)) {
-                            $trans_query .= " AND {$possible_column} = %d";
-                            $trans_args[] = $user_id;
-                            $found_user_column = true;
-                            $this->debug_log("Columna de usuario encontrada en pos_transactions: {$possible_column}");
-                            break;
-                        }
-                    }
-                    
-                    if (!$found_user_column) {
-                        $this->debug_log("No se encontró columna de usuario en pos_transactions. Columnas disponibles: " . implode(", ", $trans_column_names));
-                    }
-                }
-                
-                // Filtrar por fecha
-                $trans_query .= " AND DATE(created_at) = %s";
-                $trans_args[] = $date;
-                
-                $prepared_trans_query = $wpdb->prepare($trans_query, $trans_args);
-                $trans_result = $wpdb->get_var($prepared_trans_query);
-                $transactions_total = (float)($trans_result ?: 0);
-                
-                $debug_info['transactions_query'] = $prepared_trans_query;
-                $debug_info['transactions_total'] = $transactions_total;
-                $debug_info['transactions_payment_method_column'] = $trans_payment_method ?: 'No encontrada';
-            }
-        }
-        
-        // 3. Buscar en tabla pos_payments si existe
-        $pos_payments_table = $wpdb->prefix . 'pos_payments';
-        $payments_table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$pos_payments_table}'") === $pos_payments_table;
-        
-        if ($payments_table_exists) {
-            $payments_columns = $wpdb->get_results("DESCRIBE {$pos_payments_table}");
-            $payments_column_names = array_map(function($col) { return $col->Field; }, $payments_columns);
-            
-            // Buscar columna de fecha
-            $payments_date_column = 'created_at'; // Valor predeterminado
-            $date_columns_priority = ['date_created', 'created_at', 'date', 'timestamp'];
-            foreach ($payments_columns as $column) {
-                foreach ($date_columns_priority as $priority_name) {
-                    if (strtolower($column->Field) === strtolower($priority_name)) {
-                        $payments_date_column = $column->Field;
-                        break 2;
-                    }
-                }
-            }
-            
-            // Si no encontramos columna por nombre exacto, buscamos por patrones
-            if (!$payments_date_column) {
-                foreach ($payments_columns as $column) {
-                    if (strpos(strtolower($column->Field), 'date') !== false || 
-                        strpos(strtolower($column->Field), 'created') !== false || 
-                        strpos(strtolower($column->Field), 'time') !== false) {
-                        $payments_date_column = $column->Field;
-                        break;
-                    }
-                }
-            }
-            
-            // Agrupar correctamente las condiciones OR con paréntesis
-            $payments_query = "SELECT SUM(amount) as cash_total FROM {$pos_payments_table} 
-                              WHERE (payment_method LIKE '%cash%' OR payment_method LIKE '%efectivo%')";
-            
-            if ($payments_date_column) {
-                $payments_query .= " AND DATE({$payments_date_column}) = %s";
-                $payments_args = [$date];
-                
-                // Filtrar por usuario si se especifica un ID de usuario
-                if ($user_id > 0) {
-                    // Obtener el usuario para verificaciones adicionales
-                    $user = get_user_by('ID', $user_id);
-                    $user_name = $user ? $user->display_name : 'Desconocido';
-                    $is_ileana = ($user_name == 'Ileana');
-                    
-                    // Buscar columna de usuario en pos_payments con orden optimizado para Ileana
-                    $user_column = '';
-                    $user_column_options = $is_ileana ? 
-                        // Orden prioritario para Ileana
-                        ['seller_id', 'cashier_id', 'created_by', 'user_id', 'employee_id'] :
-                        // Orden estándar para otros usuarios 
-                        ['user_id', 'created_by', 'cashier_id', 'seller_id', 'employee_id'];
-                    
-                    foreach ($user_column_options as $option) {
-                        if (in_array($option, $payments_column_names)) {
-                            $user_column = $option;
-                            break;
-                        }
-                    }
-                    
-                    if ($user_column) {
-                        $payments_query .= " AND {$user_column} = %d";
-                        $payments_args[] = $user_id;
-                        $this->debug_log("Filtrando pos_payments por usuario", [
-                            'user_id' => $user_id,
-                            'user_name' => $user_name,
-                            'column' => $user_column,
-                            'es_ileana' => $is_ileana,
-                            'payment_method' => $payment_method
-                        ]);
-                    } else {
-                        $this->debug_log("No se encontró columna de usuario en pos_payments. Columnas disponibles: " . implode(", ", $payments_column_names));
-                    }
-                    
-                    // Debug adicional para caso de Ileana
-                    if ($is_ileana && $special_user_trace) {
-                        // Consulta diagnóstico sin filtro de usuario para ver qué hay realmente
-                        $diagnostic_query = $wpdb->prepare("SELECT * FROM {$pos_payments_table} 
-                                                        WHERE (payment_method LIKE '%cash%' OR payment_method LIKE '%efectivo%')
-                                                        AND DATE({$payments_date_column}) = %s 
-                                                        LIMIT 5", $date);
-                                                        
-                        $diagnostic_result = $wpdb->get_results($diagnostic_query);
-                        $this->debug_log("DIAGNÓSTICO EFECTIVO PARA ILEANA SIN FILTRO USUARIO", [
-                            'query' => $diagnostic_query,
-                            'resultados' => $diagnostic_result ? count($diagnostic_result) : 0,
-                            'datos' => $diagnostic_result
-                        ]);
-                        
-                        // Si no hay columna de usuario pero sí hay registros de Ileana, usamos una lógica alternativa
-                        if (!$user_column && $diagnostic_result) {
-                            // En algunos casos los datos de Ileana podrían estar en otra columna como 'description' o 'notes'
-                            // Buscamos su nombre en texto libre
-                            if (array_intersect(['description', 'notes', 'comment', 'memo', 'reference'], $payments_column_names)) {
-                                $description_columns = array_intersect(['description', 'notes', 'comment', 'memo', 'reference'], $payments_column_names);
-                                foreach($description_columns as $desc_col) {
-                                    $payments_query .= " AND {$desc_col} LIKE %s";
-                                    $payments_args[] = "%Ileana%";
-                                    $this->debug_log("FILTRO ESPECIAL: Buscando 'Ileana' en columna {$desc_col}");
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                $prepared_payments_query = $wpdb->prepare($payments_query, $payments_args);
-                $this->debug_log("Query pos_payments: {$prepared_payments_query}");
-                $payments_result = $wpdb->get_var($prepared_payments_query);
-                
-                if ($payments_result && (float)$payments_result > 0) {
-                    $payments_total = (float)$payments_result;
-                    
-                    // Si hay filtro de usuario y ya tenemos otros totales, sumamos en vez de reemplazar
-                    if ($user_id > 0 && $total_amount > 0) {
-                        // Sumamos el total de pos_payments al total existente
-                        $this->debug_log("Sumando pos_payments:{$payments_total} al total existente:{$total_amount}");
-                        $total_amount += $payments_total;
-                    } else {
-                        // Si no hay filtro o no hay otros totales, simplemente asignamos
-                        $this->debug_log("Asignando total de pos_payments:{$payments_total} como total final");
-                        $total_amount = $payments_total;
-                    }
-                    
-                    $expected_amount = $initial_amount + $total_amount;
-                    
-                    $debug_info['payments_query'] = $prepared_payments_query;
-                    $debug_info['payments_total'] = $payments_total;
-                }
-            }
-        }
-        
-        // Calcular los montos por método de pago de forma centralizada para evitar duplicación
+        // Get all payment methods with proper filtering
         $payment_methods = $this->calculate_all_payment_methods($register_id, $user_id, $date);
         
-        // Verificar que la suma de los métodos coincida con el total_amount
-        $payment_methods_sum = array_sum($payment_methods);
-        $payment_methods_formatted = [
-            'cash' => number_format($payment_methods['cash'], 2, '.', ''),
-            'card' => number_format($payment_methods['card'], 2, '.', ''),
-            'transfer' => number_format($payment_methods['transfer'], 2, '.', ''),
-            'check' => number_format($payment_methods['check'], 2, '.', ''),
-            'other' => number_format($payment_methods['other'], 2, '.', '')
-        ];
+        // Get cash total from payment methods
+        $cash_total = isset($payment_methods['cash']) ? (float)$payment_methods['cash'] : 0;
         
-        // Log para verificación de totales
-        $this->debug_log("VERIFICACIÓN DE TOTALES", [
-            'total_amount' => $total_amount,
-            'suma_metodos_pago' => $payment_methods_sum,
-            'diferencia' => $total_amount - $payment_methods_sum
+        // Calculate total transactions as sum of all payment methods
+        $total_transactions = array_sum($payment_methods);
+        
+        // Debug log para verificar los montos
+        $this->debug_log("=== RESUMEN DE MONTOS CALCULADOS ===", [
+            'initial_amount' => $initial_amount,
+            'cash_total' => $cash_total,
+            'total_transactions' => $total_transactions,
+            'user_id_filter' => $user_id,
+            'register_id' => $register_id,
+            'date' => $date
         ]);
         
-        // Si hay una diferencia significativa entre el total y la suma de métodos, ajustar
-        if (abs($total_amount - $payment_methods_sum) > 0.01) {
-            $this->debug_log("DIFERENCIA DETECTADA - Ajustando los métodos de pago al total correcto");
-            // Distribuir la diferencia proporcionalmente entre los métodos de pago
-            if ($payment_methods_sum > 0) {
-                foreach ($payment_methods as $key => $amount) {
-                    $payment_methods[$key] = ($amount / $payment_methods_sum) * $total_amount;
-                    $payment_methods_formatted[$key] = number_format($payment_methods[$key], 2, '.', '');
-                }
-            } else if ($total_amount > 0) {
-                // Si no hay montos en métodos pero hay total, asignar todo a efectivo
-                $payment_methods['cash'] = $total_amount;
-                $payment_methods_formatted['cash'] = number_format($total_amount, 2, '.', '');
-            }
-        }
+        // Calculate expected amount as initial amount + cash total
+        $expected_amount = $initial_amount + $cash_total;
         
-        // Retornar los datos calculados
+        // Debug information
+        $debug_info['payment_methods'] = $payment_methods;
+        $debug_info['last_closure_amount'] = $last_closure_amount;
+        
+        // Return the results
         wp_send_json_success([
-            'initial_amount' => number_format($initial_amount, 2, '.', ''),
-            'total_transactions' => number_format($total_amount, 2, '.', ''),
-            'expected_amount' => number_format($expected_amount, 2, '.', ''),
-            // Añadir montos por método de pago ya normalizados
-            'payment_methods' => $payment_methods_formatted,
-            // Añadimos información detallada de debug para diagnóstico
-            'debug_info' => [
-                'sales_total' => $sales_total,
-                'transactions_total' => $transactions_total,
-                'wc_total' => $wc_total,
-                'final_total' => $total_amount,
-                'date' => $date,
-                'payment_method_filtering' => true
-            ]
+            'initial_amount' => $initial_amount,
+            'total_transactions' => $total_transactions,
+            'expected_amount' => $expected_amount,
+            'cash_total' => $cash_total,
+            'payment_methods' => $payment_methods,
+            'debug' => $debug_info
         ]);
+        
+        return; // Ensure we don't execute any code after sending the response
     }
 
     /**
@@ -1637,14 +1254,30 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
     private function calculate_all_payment_methods($register_id, $user_id, $date) {
         global $wpdb;
         
-        // Inicializar array de resultados
-        $payment_methods = [
-            'cash' => 0,
-            'card' => 0,
-            'transfer' => 0,
-            'check' => 0,
-            'other' => 0
+        // Obtener métodos de pago del sistema o usar los predeterminados
+        $default_methods = [
+            'cash' => ['label' => __('Efectivo', 'wp-pos'), 'icon' => 'money-alt'],
+            'card' => ['label' => __('Tarjeta', 'wp-pos'), 'icon' => 'credit-card'],
+            'transfer' => ['label' => __('Transferencia', 'wp-pos'), 'icon' => 'bank'],
+            'check' => ['label' => __('Cheque', 'wp-pos'), 'icon' => 'money'],
+            'other' => ['label' => __('Otro', 'wp-pos'), 'icon' => 'admin-generic']
         ];
+        
+        // Obtener métodos de pago del sistema si la función existe
+        $system_methods = function_exists('wp_pos_get_payment_methods') ? wp_pos_get_payment_methods() : $default_methods;
+        
+        // Inicializar array de resultados con todos los métodos disponibles
+        $payment_methods = [];
+        foreach ($system_methods as $method_id => $method) {
+            $payment_methods[$method_id] = 0;
+        }
+        
+        // Asegurarse de que los métodos predeterminados siempre estén presentes
+        foreach ($default_methods as $method_id => $method) {
+            if (!isset($payment_methods[$method_id])) {
+                $payment_methods[$method_id] = 0;
+            }
+        }
         
         // Obtener nombre de usuario para mejor logging
         $user_name = '';
@@ -1657,7 +1290,8 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
             'register_id' => $register_id,
             'user_id' => $user_id,
             'user_name' => $user_name,
-            'date' => $date
+            'date' => $date,
+            'user_filtering' => $user_id > 0 ? 'ACTIVADO' : 'DESACTIVADO'
         ]);
         
         // Verificación especial para usuarios que pueden necesitar filtrado avanzado
@@ -1732,36 +1366,67 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
                 if ($results) {
                     $this->debug_log("Resultados de pos_sales agrupados: ", $results);
                     
-                    // Mapear métodos de pago a sus categorías estándar
-                    $payment_mappings = [
-                        'cash' => ['cash', 'efectivo', '1', 'Cash', 'Efectivo', 'CASH', 'EFECTIVO'],
-                        'card' => ['card', 'tarjeta', 'credit_card', 'tarjeta_credito', '2', 'Card', 'Tarjeta', 'CARD'],
-                        'transfer' => ['transfer', 'transferencia', 'bank_transfer', '4', 'Transfer', 'Transferencia', 'TRANSFER'],
-                        'check' => ['check', 'cheque', '5', 'Check', 'Cheque', 'CHECK'],
-                        'other' => ['other', 'otro', '6', 'Other', 'Otro', 'OTHER']
+                    // Obtener todos los métodos de pago del sistema para el mapeo
+                    $all_methods = array_keys($system_methods);
+                    $payment_mappings = [];
+                    
+                    // Crear mapeo de sinónimos para cada método
+                    foreach ($system_methods as $method_id => $method) {
+                        $labels = [strtolower($method_id)];
+                        if (is_array($method) && !empty($method['label'])) {
+                            $labels[] = strtolower($method['label']);
+                            $labels[] = strtolower(sanitize_title($method['label']));
+                        }
+                        $payment_mappings[$method_id] = array_unique($labels);
+                    }
+                    
+                    // Añadir mapeos comunes
+                    $common_mappings = [
+                        'cash' => ['efectivo', '1', 'efectivo', 'cash', 'money', 'dinero'],
+                        'card' => ['tarjeta', '2', 'credit_card', 'debit_card', 'creditcard', 'debitcard', 'visa', 'mastercard'],
+                        'transfer' => ['transferencia', '3', 'bank_transfer', 'banktransfer', 'wire_transfer'],
+                        'check' => ['cheque', '4', 'check', 'cheque_bancario'],
+                        'other' => ['otro', '5', 'other', 'otro_metodo', 'otro_medio']
                     ];
+                    
+                    // Combinar con los mapeos comunes
+                    foreach ($common_mappings as $method_id => $synonyms) {
+                        if (isset($payment_mappings[$method_id])) {
+                            $payment_mappings[$method_id] = array_merge($payment_mappings[$method_id], $synonyms);
+                        } else {
+                            $payment_mappings[$method_id] = $synonyms;
+                        }
+                    }
                     
                     // Asignar montos a las categorías correspondientes
                     foreach ($results as $result) {
                         $found_category = false;
+                        $payment_method = is_object($result->payment_method) ? '' : strtolower(trim($result->payment_method));
                         
-                        foreach ($payment_mappings as $category => $values) {
-                            if (in_array($result->payment_method, $values) || 
-                                (is_string($result->payment_method) && 
-                                 (in_array(strtolower($result->payment_method), array_map('strtolower', $values)) ||
-                                 in_array(strtoupper($result->payment_method), array_map('strtoupper', $values))))) {
-                                
-                                $payment_methods[$category] += (float)$result->total;
-                                $found_category = true;
-                                $this->debug_log("Asignando {$result->total} a categoría {$category} (método: {$result->payment_method})");
-                                break;
+                        // Buscar coincidencia exacta primero
+                        if (isset($payment_methods[$payment_method])) {
+                            $payment_methods[$payment_method] += (float)$result->total;
+                            $found_category = true;
+                            $this->debug_log("Asignando {$result->total} a categoría {$payment_method} (coincidencia exacta)");
+                        } 
+                        // Buscar en los sinónimos
+                        else {
+                            foreach ($payment_mappings as $category => $synonyms) {
+                                if (in_array($payment_method, $synonyms, true) || 
+                                    in_array(strtolower($payment_method), array_map('strtolower', $synonyms))) {
+                                    
+                                    $payment_methods[$category] += (float)$result->total;
+                                    $found_category = true;
+                                    $this->debug_log("Asignando {$result->total} a categoría {$category} (sinónimo: {$payment_method})");
+                                    break;
+                                }
                             }
                         }
                         
                         // Si no encontramos categoría, asignar a 'other'
-                        if (!$found_category && !empty($result->payment_method)) {
+                        if (!$found_category && !empty($payment_method)) {
                             $payment_methods['other'] += (float)$result->total;
-                            $this->debug_log("Método no reconocido '{$result->payment_method}' asignado a 'other': {$result->total}");
+                            $this->debug_log("Método no reconocido '{$payment_method}' asignado a 'other': {$result->total}");
                         }
                     }
                 }
@@ -2027,23 +1692,19 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
     
     /**
      * Calcular el monto para un método de pago específico
-     * 
-     * @param int $register_id ID de la caja registradora
-     * @param int $user_id ID del usuario (opcional)
-     * @param string $date Fecha en formato Y-m-d
-     * @param string $payment_method Método de pago (cash, card, transfer, check, other)
-     * @return float Monto calculado
      */
-    private function calculate_payment_method_amount($register_id, $user_id, $date, $payment_method) {
+    public function calculate_method_amount($payment_method, $register_id, $user_id, $date) {
         global $wpdb;
         
-        $total_amount = 0;
-        
-        // Obtener nombre de usuario para mejor logging
-        $user_name = '';
-        if ($user_id > 0) {
-            $user = get_user_by('ID', $user_id);
-            $user_name = $user ? $user->display_name : 'Desconocido';
+        // Buscar columna de método de pago
+        $payment_method_column = '';
+        foreach ($column_names as $col) {
+            if (strpos(strtolower($col), 'payment_method') !== false || 
+                strpos(strtolower($col), 'payment') !== false ||
+                strpos(strtolower($col), 'method') !== false) {
+                $payment_method_column = $col;
+                break;
+            }
         }
         
         // Log detallado del inicio del cálculo
@@ -2441,6 +2102,179 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         }
         
         return $total_amount;
+    }
+    
+    /**
+     * AJAX: Obtener métodos de pago disponibles según los filtros
+     */
+    public function ajax_get_available_payment_methods() {
+        // Verificar nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wp_pos_closure_nonce')) {
+            wp_send_json_error(['message' => __('Solicitud no autorizada.', 'wp-pos')]);
+        }
+        
+        // Obtener parámetros
+        $date = isset($_POST['date']) ? sanitize_text_field($_POST['date']) : current_time('Y-m-d');
+        $register_id = isset($_POST['register_id']) ? intval($_POST['register_id']) : 0;
+        $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
+        
+        if (!$register_id) {
+            wp_send_json_error(['message' => __('Se requiere el ID de la caja registradora.', 'wp-pos')]);
+        }
+        
+        global $wpdb;
+        $methods = [];
+        
+        // Obtener métodos de pago del sistema
+        $system_methods = function_exists('wp_pos_get_payment_methods') ? 
+            wp_pos_get_payment_methods() : [
+                'cash' => ['label' => __('Efectivo', 'wp-pos'), 'icon' => 'money-alt'],
+                'card' => ['label' => __('Tarjeta', 'wp-pos'), 'icon' => 'credit-card'],
+                'transfer' => ['label' => __('Transferencia', 'wp-pos'), 'icon' => 'bank'],
+                'check' => ['label' => __('Cheque', 'wp-pos'), 'icon' => 'money'],
+                'other' => ['label' => __('Otro', 'wp-pos'), 'icon' => 'admin-generic']
+            ];
+        
+        // Verificar qué métodos tienen transacciones para los filtros dados
+        $tables_to_check = [
+            $wpdb->prefix . 'pos_sales',
+            $wpdb->prefix . 'pos_transactions',
+            $wpdb->prefix . 'pos_payments'
+        ];
+        
+        $found_methods = [];
+        
+        foreach ($tables_to_check as $table) {
+            if ($wpdb->get_var("SHOW TABLES LIKE '$table'") !== $table) {
+                continue;
+            }
+            
+            // Obtener columnas de la tabla
+            $columns = $wpdb->get_col("DESCRIBE $table");
+            
+            // Construir consulta dinámica
+            $query = "SELECT DISTINCT payment_method FROM $table WHERE 1=1";
+            $args = [];
+            
+            // Filtrar por fecha si existe columna de fecha
+            $date_columns = ['date_created', 'created_at', 'date', 'timestamp'];
+            $date_column = null;
+            
+            foreach ($date_columns as $col) {
+                if (in_array($col, $columns)) {
+                    $date_column = $col;
+                    break;
+                }
+            }
+            
+            if ($date_column) {
+                $query .= " AND DATE($date_column) = %s";
+                $args[] = $date;
+            }
+            
+            // Filtrar por caja registradora
+            if (in_array('register_id', $columns) && $register_id) {
+                $query .= " AND register_id = %d";
+                $args[] = $register_id;
+            }
+            
+            // Filtrar por usuario si se especifica
+            if ($user_id) {
+                $user_columns = ['user_id', 'created_by', 'cashier_id', 'seller_id', 'employee_id'];
+                $user_column_found = false;
+                
+                foreach ($user_columns as $user_col) {
+                    if (in_array($user_col, $columns)) {
+                        $query .= " AND $user_col = %d";
+                        $args[] = $user_id;
+                        $user_column_found = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Ejecutar consulta
+            if (!empty($args)) {
+                $query = $wpdb->prepare($query, $args);
+            }
+            
+            $results = $wpdb->get_results($query);
+            
+            // Procesar resultados
+            foreach ($results as $row) {
+                if (!empty($row->payment_method)) {
+                    $found_methods[strtolower($row->payment_method)] = true;
+                }
+            }
+        }
+        
+        // Si no se encontraron métodos, usar todos los métodos del sistema
+        if (empty($found_methods)) {
+            foreach ($system_methods as $id => $method) {
+                $methods[] = [
+                    'id' => $id,
+                    'label' => is_array($method) ? $method['label'] : $method,
+                    'icon' => is_array($method) && !empty($method['icon']) ? $method['icon'] : 'admin-generic'
+                ];
+            }
+        } else {
+            // Mapear métodos encontrados a los métodos del sistema
+            $method_mapping = [
+                'cash' => ['efectivo', 'cash', '1', 'Cash', 'Efectivo', 'CASH', 'EFECTIVO'],
+                'card' => ['card', 'tarjeta', 'credit_card', 'tarjeta_credito', '2', 'Card', 'Tarjeta', 'CARD'],
+                'transfer' => ['transfer', 'transferencia', 'bank_transfer', '4', 'Transfer', 'Transferencia', 'TRANSFER'],
+                'check' => ['check', 'cheque', '5', 'Check', 'Cheque', 'CHECK'],
+                'other' => ['other', 'otro', '6', 'Other', 'Otro', 'OTHER']
+            ];
+            
+            $added_methods = [];
+            
+            // Primero, agregar métodos encontrados
+            foreach ($found_methods as $method => $_) {
+                $method_lower = strtolower($method);
+                $found = false;
+                
+                // Buscar en los mapeos
+                foreach ($method_mapping as $sys_id => $variations) {
+                    if (in_array($method_lower, array_map('strtolower', $variations))) {
+                        if (!in_array($sys_id, $added_methods) && isset($system_methods[$sys_id])) {
+                            $methods[] = [
+                                'id' => $sys_id,
+                                'label' => is_array($system_methods[$sys_id]) ? $system_methods[$sys_id]['label'] : $system_methods[$sys_id],
+                                'icon' => is_array($system_methods[$sys_id]) && !empty($system_methods[$sys_id]['icon']) ? 
+                                    $system_methods[$sys_id]['icon'] : 'admin-generic'
+                            ];
+                            $added_methods[] = $sys_id;
+                        }
+                        $found = true;
+                        break;
+                    }
+                }
+                
+                // Si no se encontró en los mapeos, agregar tal cual
+                if (!$found && !in_array($method_lower, $added_methods)) {
+                    $methods[] = [
+                        'id' => sanitize_key($method_lower),
+                        'label' => ucfirst($method_lower),
+                        'icon' => 'admin-generic'
+                    ];
+                    $added_methods[] = $method_lower;
+                }
+            }
+            
+            // Asegurarse de que al menos los métodos del sistema estén incluidos
+            foreach ($system_methods as $id => $method) {
+                if (!in_array($id, $added_methods)) {
+                    $methods[] = [
+                        'id' => $id,
+                        'label' => is_array($method) ? $method['label'] : $method,
+                        'icon' => is_array($method) && !empty($method['icon']) ? $method['icon'] : 'admin-generic'
+                    ];
+                }
+            }
+        }
+        
+        wp_send_json_success(['methods' => $methods]);
     }
     
     /**
