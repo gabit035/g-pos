@@ -98,11 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </tr>
                                     <tr>
                                         <th><label for="purchase_price"><?php esc_html_e('Precio de compra', 'wp-pos'); ?><span class="required">*</span></label></th>
-                                        <td><input type="number" step="0.01" name="purchase_price" id="purchase_price" value="<?php echo esc_attr($service['purchase_price']); ?>" required></td>
+                                        <td><div class="wp-pos-price-field"><span class="currency-symbol">$</span><input type="number" step="0.01" name="purchase_price" id="purchase_price" value="<?php echo esc_attr($service['purchase_price']); ?>" required></div></td>
                                     </tr>
                                     <tr>
                                         <th><label for="sale_price"><?php esc_html_e('Precio de venta', 'wp-pos'); ?><span class="required">*</span></label></th>
-                                        <td><input type="number" step="0.01" name="sale_price" id="sale_price" value="<?php echo esc_attr($service['sale_price']); ?>" required></td>
+                                        <td><div class="wp-pos-price-field"><span class="currency-symbol">$</span><input type="number" step="0.01" name="sale_price" id="sale_price" value="<?php echo esc_attr($service['sale_price']); ?>" required></div></td>
                                     </tr>
                                 </table>
                             </div>

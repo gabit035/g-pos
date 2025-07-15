@@ -152,7 +152,7 @@ $base_url = admin_url('admin.php?page=wp-pos-services');
                                     <strong><?php echo esc_html($service['name']); ?></strong>
                                 </td>
                                 <td class="wp-pos-service-price">
-                                    <span class="wp-pos-price-tag"><?php echo wp_pos_format_price($service['sale_price']); ?></span>
+                                    <span class="wp-pos-price-tag">$<?php echo number_format($service['sale_price'], 2); ?></span>
                                 </td>
                                 <td class="wp-pos-service-actions">
                                     <div class="wp-pos-action-buttons">

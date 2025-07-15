@@ -191,9 +191,9 @@ if ($table_exists) {
                             <td class="column-price">
                                 <?php 
                                     if ($product['sale_price'] > 0 && $product['sale_price'] < $product['regular_price']) {
-                                        echo '<del>' . wp_pos_format_price($product['regular_price']) . '</del> <span class="sale-price">' . wp_pos_format_price($product['sale_price']) . '</span>';
+                                        echo '<del>$' . number_format($product['regular_price'], 2) . '</del> <span class="sale-price">$' . number_format($product['sale_price'], 2) . '</span>';
                                     } else {
-                                        echo wp_pos_format_price($product['regular_price']);
+                                        echo '$' . number_format($product['regular_price'], 2);
                                     }
                                 ?>
                             </td>

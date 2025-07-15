@@ -304,6 +304,35 @@
     color: #3b4374;
 }
 
+/* Estilos para campos de precio con símbolo de moneda */
+.wp-pos-price-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.wp-pos-price-field .currency-symbol {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    font-weight: 500;
+    font-size: 15px;
+    z-index: 1;
+}
+
+.wp-pos-price-field input[type="number"] {
+    padding-left: 25px;
+}
+
+/* Estilo para mostrar precios con símbolo de peso */
+.wp-pos-price-tag {
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
 .wp-pos-services-table tbody tr:hover {
     background-color: #f8fafc;
 }

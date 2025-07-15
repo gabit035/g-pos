@@ -21,7 +21,8 @@ class WP_POS_Integrated_Debug_Tool {
      * Constructor de la clase
      */
     public function __construct() {
-        add_action('admin_menu', array($this, 'add_debug_menu'));
+        // Menú de depuración desactivado
+        // add_action('admin_menu', array($this, 'add_debug_menu'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
     }
 
