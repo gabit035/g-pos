@@ -61,6 +61,7 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         add_action('wp_ajax_wp_pos_closures_save_closure', [$this, 'ajax_save_closure']);
         add_action('wp_ajax_wp_pos_closures_calculate_amounts', [$this, 'ajax_calculate_amounts']);
         add_action('wp_ajax_wp_pos_closures_get_closure_details', [$this, 'ajax_get_closure_details']);
+        add_action('wp_ajax_wp_pos_closures_get_closure', [$this, 'ajax_get_closure']);
         add_action('wp_ajax_wp_pos_closures_update_status', [$this, 'ajax_update_status']);
         add_action('wp_ajax_wp_pos_closures_get_status_history', [$this, 'ajax_get_status_history']);
         add_action('wp_ajax_wp_pos_closures_delete_closure', [$this, 'ajax_delete_closure']);
@@ -69,6 +70,7 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         add_action('wp_ajax_wp_pos_get_available_payment_methods', [$this, 'ajax_get_available_payment_methods']);
         add_action('wp_ajax_wp_pos_forensic_investigation', [$this, 'ajax_forensic_investigation']);
         add_action('wp_ajax_wp_pos_closures_get_breakdown', [$this, 'ajax_get_breakdown']);
+        add_action('wp_ajax_wp_pos_closures_get_history', [$this, 'ajax_get_history']);
         
         // Inicializar base de datos si es necesario
         add_action('admin_init', [$this, 'ensure_tables_exist']);
@@ -81,6 +83,9 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         // Registrar scripts de utilidades
         wp_register_script('wp-pos-notifications-js', $this->get_assets_url() . 'js/notifications.js', array('jquery'), WP_POS_VERSION, true);
         wp_register_script('wp-pos-notifications-fallback-js', $this->get_assets_url() . 'js/notification-fallback.js', array('jquery', 'wp-pos-notifications-js'), WP_POS_VERSION, true);
+        
+        // Registrar el script específico para la vista de historial
+        wp_register_script('wp-pos-closures-history-js', $this->get_assets_url() . 'js/closures-history.js', array('jquery', 'jquery-ui-dialog', 'jquery-ui-datepicker'), WP_POS_VERSION, true);
         wp_register_script('wp-pos-loading-indicator-js', $this->get_assets_url() . 'js/loading-indicator.js', array('jquery'), WP_POS_VERSION, true);
         wp_register_script('wp-pos-closures-approval-js', $this->get_assets_url() . 'js/closures-approval.js', array('jquery'), WP_POS_VERSION, true);
         wp_register_script('wp-pos-loaders-implementation-js', $this->get_assets_url() . 'js/loaders-implementation.js', array('jquery', 'wp-pos-loading-indicator-js'), WP_POS_VERSION, true);
@@ -158,6 +163,7 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         } elseif ($current_view === 'history') {
             // Cargar estilos específicos del historial
             wp_enqueue_style('wp-pos-closures-status-css');
+            wp_enqueue_script('wp-pos-closures-history-js');
         }
         
         // Localizar script principal
@@ -2569,7 +2575,235 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         wp_send_json_success(['closure' => $closure]);
     }
     
-    // La función ajax_update_status ha sido movida y mejorada con soporte para historial y notificaciones
+    /**
+     * AJAX: Obtener un cierre específico con formato JSON compatible con el frontend
+     * Esta función es una alternativa a ajax_get_closure_details y existe para mantener
+     * compatibilidad con el código JavaScript existente
+     */
+    public function ajax_get_closure() {
+        // Verificar nonce
+        check_ajax_referer('wp_pos_closures_nonce', 'nonce');
+        
+        // Verificar permisos
+        if (!current_user_can('manage_pos') && !current_user_can('administrator')) {
+            wp_send_json_error(['message' => __('No tienes permisos para realizar esta acción.', 'wp-pos')]);
+        }
+        
+        // Obtener el ID del cierre
+        $closure_id = isset($_POST['closure_id']) ? intval($_POST['closure_id']) : 0;
+        
+        if ($closure_id <= 0) {
+            wp_send_json_error(['message' => __('ID de cierre inválido.', 'wp-pos')]);
+        }
+        
+        global $wpdb;
+        
+        // Registrar actividad de debugging
+        $this->debug_log('Obteniendo información del cierre', [
+            'closure_id' => $closure_id,
+            'user' => wp_get_current_user()->user_login
+        ]);
+        
+        // Consulta para obtener los detalles del cierre
+        $closure = $wpdb->get_row($wpdb->prepare(
+            "SELECT c.*, 
+                    u.display_name as user_name,
+                    r.name as register_name 
+             FROM {$wpdb->prefix}pos_closures c
+             LEFT JOIN {$wpdb->users} u ON c.user_id = u.ID
+             LEFT JOIN {$wpdb->prefix}pos_registers r ON c.register_id = r.id
+             WHERE c.id = %d",
+            $closure_id
+        ), ARRAY_A);
+        
+        if (!$closure) {
+            $this->debug_log('Error: Cierre no encontrado', ['closure_id' => $closure_id]);
+            wp_send_json_error(['message' => __('Cierre no encontrado.', 'wp-pos')]);
+        }
+        
+        // Formatear fecha para mejor presentación
+        if (isset($closure['created_at'])) {
+            $date_format = get_option('date_format') . ' ' . get_option('time_format');
+            $closure['date'] = date_i18n($date_format, strtotime($closure['created_at']));
+        }
+        
+        // Asegurar que payment_breakdown es una cadena JSON, no un objeto ya decodificado
+        if (isset($closure['payment_breakdown']) && !empty($closure['payment_breakdown'])) {
+            if (!is_string($closure['payment_breakdown'])) {
+                // Si ya es un array u objeto, lo convertimos a JSON string
+                $closure['payment_breakdown'] = json_encode($closure['payment_breakdown']);
+            }
+            
+            // Verificar que sea un JSON válido
+            json_decode($closure['payment_breakdown']);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->debug_log('Error: payment_breakdown no es un JSON válido', [
+                    'closure_id' => $closure_id,
+                    'payment_breakdown' => $closure['payment_breakdown'],
+                    'json_error' => json_last_error_msg()
+                ]);
+            }
+        }
+        
+        $this->debug_log('Enviando datos del cierre al frontend', ['closure_id' => $closure_id]);
+        
+        // Enviar los datos al frontend
+        wp_send_json_success(['closure' => $closure]);
+    }
+    
+    /**
+     * AJAX: Obtener historial de cierres con filtros
+     * Esta función maneja la solicitud AJAX para el historial de cierres
+     * con opciones de filtrado por registro, estado y rango de fechas
+     */
+    public function ajax_get_history() {
+        // Verificar nonce por seguridad
+        if (!check_ajax_referer('wp_pos_closures_nonce', 'nonce', false)) {
+            $this->debug_log('Error de verificación de nonce', [
+                'nonce_recibido' => isset($_REQUEST['nonce']) ? substr($_REQUEST['nonce'], 0, 5) . '...' : 'no proporcionado'
+            ]);
+            wp_send_json_error(['message' => 'Error de seguridad: nonce inválido']);
+            return;
+        }
+        $this->debug_log('Nonce verificado correctamente');
+        
+        $this->debug_log('Solicitud de historial de cierres recibida', $_POST);
+        
+        // Obtener parámetros con valores por defecto
+        $register_id = isset($_POST['register_id']) ? intval($_POST['register_id']) : 0;
+        $status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
+        $date_from = isset($_POST['date_from']) ? sanitize_text_field($_POST['date_from']) : '';
+        $date_to = isset($_POST['date_to']) ? sanitize_text_field($_POST['date_to']) : '';
+        $page = isset($_POST['page']) ? intval($_POST['page']) : 1;
+        $per_page = isset($_POST['per_page']) ? intval($_POST['per_page']) : 20;
+        
+        global $wpdb;
+        
+        // Construir consulta base
+        $query = "SELECT c.*, 
+                  r.name as register_name, 
+                  u.display_name as user_name
+                  FROM {$wpdb->prefix}pos_closures c 
+                  LEFT JOIN {$wpdb->prefix}pos_registers r ON c.register_id = r.id
+                  LEFT JOIN {$wpdb->users} u ON c.user_id = u.ID
+                  WHERE 1=1";
+        
+        $count_query = "SELECT COUNT(*) FROM {$wpdb->prefix}pos_closures c WHERE 1=1";
+        
+        $args = array();
+        $count_args = array();
+        
+        // Aplicar filtros si existen
+        if ($register_id > 0) {
+            $query .= " AND c.register_id = %d";
+            $count_query .= " AND c.register_id = %d";
+            $args[] = $register_id;
+            $count_args[] = $register_id;
+        }
+        
+        if (!empty($status)) {
+            $query .= " AND c.status = %s";
+            $count_query .= " AND c.status = %s";
+            $args[] = $status;
+            $count_args[] = $status;
+        }
+        
+        if (!empty($date_from)) {
+            $query .= " AND c.date >= %s";
+            $count_query .= " AND c.date >= %s";
+            $args[] = $date_from . ' 00:00:00';
+            $count_args[] = $date_from . ' 00:00:00';
+        }
+        
+        if (!empty($date_to)) {
+            $query .= " AND c.date <= %s";
+            $count_query .= " AND c.date <= %s";
+            $args[] = $date_to . ' 23:59:59';
+            $count_args[] = $date_to . ' 23:59:59';
+        }
+        
+        // Calcular el total para paginación
+        if (!empty($count_args)) {
+            $count_query = $wpdb->prepare($count_query, $count_args);
+        }
+        
+        $total_items = $wpdb->get_var($count_query);
+        
+        // Ordenar por fecha descendente
+        $query .= " ORDER BY c.date DESC, c.id DESC";
+        
+        // Agregar límites para paginación
+        $offset = ($page - 1) * $per_page;
+        $query .= " LIMIT %d, %d";
+        $args[] = $offset;
+        $args[] = $per_page;
+        
+        // Preparar la consulta si hay argumentos
+        if (!empty($args)) {
+            $query = $wpdb->prepare($query, $args);
+        }
+        
+        $this->debug_log('Consulta SQL para historial de cierres', $query);
+        
+        // Ejecutar la consulta
+        $closures = $wpdb->get_results($query);
+        
+        // Formatear los resultados para la respuesta
+        $formatted_closures = array();
+        if ($closures) {
+            foreach ($closures as $closure) {
+                // Decodificar payment_methods si existe
+                $payment_methods = [];
+                if (!empty($closure->payment_methods)) {
+                    $payment_methods = json_decode($closure->payment_methods, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        $payment_methods = [];
+                    }
+                }
+                
+                $formatted_closures[] = array(
+                    'id' => $closure->id,
+                    'date' => date('Y-m-d H:i:s', strtotime($closure->date)),
+                    'formatted_date' => date('d/m/Y H:i', strtotime($closure->date)),
+                    'register_id' => $closure->register_id,
+                    'register_name' => $closure->register_name ?: 'Caja sin nombre',
+                    'user_id' => $closure->user_id,
+                    'user_name' => $closure->user_name ?: 'Usuario desconocido',
+                    'initial_amount' => floatval($closure->initial_amount),
+                    'expected_amount' => floatval($closure->expected_amount),
+                    'final_amount' => floatval($closure->final_amount),
+                    'difference' => floatval($closure->final_amount) - floatval($closure->expected_amount),
+                    'total_sales' => floatval($closure->total_sales),
+                    'total_transactions' => intval($closure->total_transactions),
+                    'status' => $closure->status,
+                    'status_label' => $this->get_status_label($closure->status),
+                    'payment_methods' => $payment_methods,
+                    'observations' => $closure->observations
+                );
+            }
+        }
+        
+        $this->debug_log('Número de cierres encontrados', count($formatted_closures));
+        
+        // Enviar respuesta
+        wp_send_json_success(array(
+            'closures' => $formatted_closures,
+            'total' => intval($total_items),
+            'pages' => ceil($total_items / $per_page),
+            'current_page' => $page
+        ));
+    }
+    
+    // Helper para obtener etiqueta de estado
+    private function get_status_label($status) {
+        $labels = [
+            'pending' => 'Pendiente',
+            'approved' => 'Aprobado',
+            'rejected' => 'Rechazado'
+        ];
+        
+        return isset($labels[$status]) ? $labels[$status] : $status;
+    }
     
     /**
      * AJAX: Actualizar estado de un cierre (aprobar/rechazar)

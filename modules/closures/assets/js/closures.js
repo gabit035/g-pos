@@ -9,6 +9,74 @@ window.WP_POS_Closures = window.WP_POS_Closures || {};
 (function($) {
     'use strict';
     
+    // Funciones auxiliares globales para formatear datos
+    function formatCurrency(amount) {
+        var numericAmount = parseFloat(amount);
+        if (isNaN(numericAmount)) return '$0.00';
+        return '$' + numericAmount.toFixed(2);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        try {
+            var date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+            return ('0' + date.getDate()).slice(-2) + '/' + 
+                   ('0' + (date.getMonth() + 1)).slice(-2) + '/' + 
+                   date.getFullYear() + ' ' + 
+                   ('0' + date.getHours()).slice(-2) + ':' + 
+                   ('0' + date.getMinutes()).slice(-2);
+        } catch(e) {
+            console.error('Error al formatear fecha:', e);
+            return dateString;
+        }
+    }
+
+    function getStatusText(status) {
+        var statusMap = {
+            'pending': 'Pendiente',
+            'approved': 'Aprobado',
+            'rejected': 'Rechazado',
+            'closed': 'Cerrado'
+        };
+        return statusMap[status] || status;
+    }
+
+    // Función global para renderizar la lista de cierres
+    function renderClosuresList(closures) {
+        console.log('Renderizando lista de cierres (global):', closures);
+        if (!closures || closures.length === 0) {
+            jQuery('#closures-list').html('<tr><td colspan="9" class="no-items">No se encontraron cierres de caja</td></tr>');
+            return;
+        }
+        
+        var html = '';
+        jQuery.each(closures, function(index, closure) {
+            var differenceClass = parseFloat(closure.difference) < 0 ? 'negative-amount' : 
+                               (parseFloat(closure.difference) > 0 ? 'positive-amount' : '');
+            
+            var statusClass = 'status-' + closure.status;
+            var statusText = getStatusText(closure.status);
+            
+            html += '<tr>';
+            html += '<td>' + (closure.id || '-') + '</td>';
+            html += '<td>' + formatDate(closure.created_at || '') + '</td>';
+            html += '<td>' + (closure.user_name || '-') + '</td>';
+            html += '<td>' + formatCurrency(closure.initial_amount) + '</td>';
+            html += '<td>' + formatCurrency(closure.expected_amount) + '</td>';
+            html += '<td>' + formatCurrency(closure.final_amount || closure.actual_amount) + '</td>';
+            html += '<td class="' + differenceClass + '">' + formatCurrency(closure.difference) + '</td>';
+            html += '<td><span class="closure-status ' + statusClass + '">' + statusText + '</span></td>';
+            html += '<td class="actions-column">';
+            html += '<button class="button button-small view-closure" data-id="' + closure.id + '">';
+            html += '<span class="dashicons dashicons-visibility"></span></button>';
+            html += '</td>';
+            html += '</tr>';
+        });
+        
+        jQuery('#closures-list').html(html);
+    }
+
     // Extender el objeto principal del módulo
     $.extend(window.WP_POS_Closures, {
         /**
@@ -348,15 +416,52 @@ window.WP_POS_Closures = window.WP_POS_Closures || {};
         },
         
         /**
-         * Renderiza el desglose de pagos en la tabla
+         * Renderiza el desglose de pagos en la tabla con una mejor visualización
+         * @param {Object} breakdown - Objeto con los montos por método de pago
+         * @param {jQuery|null} $container - Contenedor opcional donde insertar el desglose (jQuery object)
          */
-        renderPaymentBreakdown: function(breakdown) {
+        renderPaymentBreakdown: function(breakdown, $container) {
             console.log('Renderizando desglose de pagos:', breakdown);
             var $ = jQuery;
-            var html = '<table style="width:100%; border-collapse:collapse; margin-top:0px;" class="payment-breakdown-table"><tbody>';
+            
+            // Si no se proporciona un contenedor específico, usar el predeterminado
+            $container = $container || $('#view-payment-breakdown');
+            
+            // Asegurar que breakdown sea un objeto
+            if (!breakdown || typeof breakdown !== 'object') {
+                console.warn('El desglose de pagos no es un objeto válido:', breakdown);
+                breakdown = {
+                    cash: 0,
+                    card: 0,
+                    transfer: 0,
+                    check: 0,
+                    other: 0
+                };
+            }
+            
+            // Estructura estándar de métodos de pago basados en la memoria
+            var standardMethods = ['cash', 'card', 'transfer', 'check', 'other'];
+            
+            // Asegurar que todos los métodos estén presentes
+            standardMethods.forEach(function(method) {
+                if (typeof breakdown[method] === 'undefined') {
+                    breakdown[method] = 0;
+                    console.log('Añadiendo método faltante:', method);
+                }
+            });
+            
+            // Estilos CSS para la tabla
+            var html = '<table style="width:100%; border-collapse:collapse; margin:10px 0; border-radius:5px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1);" class="payment-breakdown-table">'
+                    + '<thead>'
+                    + '<tr style="background-color:#f4f6f9;">'
+                    + '<th style="padding:12px 15px; text-align:left; border-bottom:2px solid #eee;">Método de Pago</th>'
+                    + '<th style="padding:12px 15px; text-align:right; border-bottom:2px solid #eee;">Monto</th>'
+                    + '</tr>'
+                    + '</thead>'
+                    + '<tbody>';
             var total = 0;
             
-            // Etiquetas para los métodos de pago
+            // Definiciones de métodos de pago consistentes con el módulo de ventas
             var methodLabels = {
                 cash: 'Efectivo',
                 card: 'Tarjeta',
@@ -365,37 +470,65 @@ window.WP_POS_Closures = window.WP_POS_Closures || {};
                 other: 'Otro'
             };
             
-            // Iconos para cada método de pago
+            // Iconos mejorados para cada método de pago
             var methodIcons = {
-                cash: '💵',
-                card: '💳',
-                transfer: '🏦',
-                check: '📝',
-                other: '📎'
+                cash: '<span style="display:inline-block; width:24px; text-align:center; margin-right:5px;">💵</span>',
+                card: '<span style="display:inline-block; width:24px; text-align:center; margin-right:5px;">💳</span>',
+                transfer: '<span style="display:inline-block; width:24px; text-align:center; margin-right:5px;">🏦</span>',
+                check: '<span style="display:inline-block; width:24px; text-align:center; margin-right:5px;">📝</span>',
+                other: '<span style="display:inline-block; width:24px; text-align:center; margin-right:5px;">📎</span>'
             };
             
-            // Añadir filas con datos
-            for (var method in breakdown) {
-                if (!breakdown.hasOwnProperty(method)) continue;
+            // Añadir filas con datos para métodos estándar (en orden definido)
+            standardMethods.forEach(function(method) {
+                if (!breakdown.hasOwnProperty(method)) return;
+                
                 var label = methodLabels[method] || method;
                 var icon = methodIcons[method] || '';
-                var amount = breakdown[method];
-                var rowStyle = amount > 0 ? 'background-color:#f9fff9' : '';
+                var amount = parseFloat(breakdown[method]) || 0;
+                var amountFormatted = !isNaN(amount) ? amount.toFixed(2) : '0.00';
+                
+                // Estilo condicional según el valor
+                var rowStyle = '';
+                if (amount > 0) {
+                    rowStyle = 'background-color:#f9fffa;';
+                } else {
+                    rowStyle = 'color:#999;';
+                }
                 
                 html += '<tr style="border-bottom:1px solid #eee; ' + rowStyle + '">'
-                        + '<td style="padding:8px 15px; text-align:left">' + icon + ' ' + label + '</td>'
-                        + '<td style="padding:8px 15px; text-align:right; font-family:monospace">$' + Number(amount).toFixed(2) + '</td>'
-                        + '</tr>';
-                        
-                console.log('Agregando fila:', label, amount);
-                total += parseFloat(amount) || 0;
+                      + '<td style="padding:10px 15px; text-align:left">' + icon + label + '</td>'
+                      + '<td style="padding:10px 15px; text-align:right; font-family:monospace; font-size:1.1em;">$' + amountFormatted + '</td>'
+                      + '</tr>';
+                      
+                console.log('Agregando fila:', label, amountFormatted);
+                total += amount;
+            });
+            
+            // Añadir cualquier método adicional que pueda existir pero no esté en la lista estándar
+            for (var method in breakdown) {
+                if (!breakdown.hasOwnProperty(method) || standardMethods.includes(method)) continue;
+                
+                var label = methodLabels[method] || method;
+                var amount = parseFloat(breakdown[method]) || 0;
+                var amountFormatted = !isNaN(amount) ? amount.toFixed(2) : '0.00';
+                
+                html += '<tr style="border-bottom:1px solid #eee;">'
+                      + '<td style="padding:10px 15px; text-align:left">' + label + '</td>'
+                      + '<td style="padding:10px 15px; text-align:right; font-family:monospace; font-size:1.1em;">$' + amountFormatted + '</td>'
+                      + '</tr>';
+                      
+                total += amount;
             }
             
+            // Formatear total
+            var totalFormatted = !isNaN(total) ? total.toFixed(2) : '0.00';
+            
             // Añadir fila de total con estilo destacado
-            html += '<tr style="border-top:2px solid #ddd; font-weight:bold; background-color:#f0f7ff">'
-                    + '<td style="padding:10px 15px; text-align:left">TOTAL</td>'
-                    + '<td style="padding:10px 15px; text-align:right; font-family:monospace">$' + Number(total).toFixed(2) + '</td>'
-                    + '</tr>';
+            html += '<tr style="border-top:2px solid #ddd; font-weight:bold; background-color:#e6f0fa">'
+                  + '<td style="padding:12px 15px; text-align:left">TOTAL</td>'
+                  + '<td style="padding:12px 15px; text-align:right; font-family:monospace; font-size:1.2em;">$' + totalFormatted + '</td>'
+                  + '</tr>';
             
             html += '</tbody></table>';
             
@@ -410,7 +543,14 @@ window.WP_POS_Closures = window.WP_POS_Closures || {};
             html += '<input type="hidden" id="payment_breakdown_json" name="payment_breakdown_json" value=\'' + JSON.stringify(breakdown) + '\'>';
             
             console.log('HTML generado con total:', html);
-            $('#payment-method-breakdown').html(html);
+            
+            // Usar el contenedor proporcionado para insertar el HTML
+            if ($container && $container.length) {
+                $container.html(html);
+            } else {
+                // Fallback a los selectores anteriores por compatibilidad
+                $('#payment-method-breakdown, #view-payment-breakdown').html(html);
+            }
             
             // Disparar evento para notificar que el desglose ha sido actualizado
             $(document).trigger('wp-pos-payment-breakdown-updated', [breakdown, total]);
@@ -465,67 +605,158 @@ window.WP_POS_Closures = window.WP_POS_Closures || {};
         },
         
         /**
-         * Configurar handler para ver detalles del cierre
+         * Obtener detalles de un cierre específico
          */
-        setupClosureView: function() {
-            $(document).on('click', '.view-closure', function(e) {
-                e.preventDefault();
-                
-                var closure_id = $(this).data('id');
-                
-                $.ajax({
-                    url: wp_pos_closures.ajax_url,
-                    type: 'POST',
-                    dataType: 'json',
-                    data: {
-                        action: 'wp_pos_closures_get_closure',
-                        nonce: wp_pos_closures.nonce,
-                        closure_id: closure_id
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            var closure = response.data.closure;
-                            var payment_breakdown = closure.payment_breakdown ? JSON.parse(closure.payment_breakdown) : null;
+        getClosureDetails: function(closure_id, callback) {
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'wp_pos_closures_get_closure_details',
+                    nonce: wp_pos_closures.nonce,
+                    closure_id: closure_id
+                },
+                success: function(response) {
+                    console.log('Respuesta de detalles de cierre:', response);
+                    if (response.success) {
+                        var closure = response.data.closure;
+                        
+                        // Obtener payment_breakdown desde la respuesta con manejo mejorado
+                        var payment_breakdown = null;
+                        
+                        try {
+                            // 1. Primero intentar usar payment_breakdown_decoded (si fue decodificado por el backend)
+                            if (closure.payment_breakdown_decoded) {
+                                console.log('Usando payment_breakdown_decoded predecodificado');
+                                payment_breakdown = closure.payment_breakdown_decoded;
+                            } 
+                            // 2. Si no, intentar decodificar payment_breakdown si es string
+                            else if (closure.payment_breakdown) {
+                                if (typeof closure.payment_breakdown === 'string') {
+                                    console.log('Decodificando payment_breakdown desde string');
+                                    payment_breakdown = JSON.parse(closure.payment_breakdown);
+                                } else {
+                                    console.log('Usando payment_breakdown como objeto');
+                                    payment_breakdown = closure.payment_breakdown;
+                                }
+                            }
                             
-                            var html = '<div class="wp-pos-closure-details">' +
-                                '<h3>Detalles del Cierre</h3>' +
-                                '<p><strong>Fecha:</strong> ' + closure.date + '</p>' +
-                                '<p><strong>Caja:</strong> ' + closure.register_name + '</p>' +
-                                '<p><strong>Usuario:</strong> ' + closure.user_name + '</p>' +
-                                '<p><strong>Monto inicial:</strong> $' + parseFloat(closure.initial_amount).toFixed(2) + '</p>' +
-                                '<p><strong>Monto final:</strong> $' + parseFloat(closure.final_amount).toFixed(2) + '</p>' +
-                                '<p><strong>Monto total ventas:</strong> $' + parseFloat(closure.total_sales).toFixed(2) + '</p>' +
-                                '<p><strong>Observaciones:</strong> ' + (closure.observations || 'Sin observaciones') + '</p>' +
-                                '</div>';
+                            // Si no hay desglose de pagos, crear uno vacío con todos los métodos
+                            if (!payment_breakdown) {
+                                console.log('No se encontró desglose de pagos, creando estructura vacía');
+                                payment_breakdown = {
+                                    cash: 0,
+                                    card: 0,
+                                    transfer: 0,
+                                    check: 0,
+                                    other: 0
+                                };
+                            }
                             
-                            $(html).dialog({
-                                autoOpen: true,
-                                modal: true,
-                                title: 'Cierre #' + closure.id,
-                                width: 500,
-                                buttons: {
-                                    "Cerrar": function() {
-                                        $(this).dialog("close");
-                                    }
+                            // Asegurar que todos los métodos estén presentes
+                            var methods = ['cash', 'card', 'transfer', 'check', 'other'];
+                            methods.forEach(function(method) {
+                                if (typeof payment_breakdown[method] === 'undefined') {
+                                    payment_breakdown[method] = 0;
                                 }
                             });
                             
-                            // Si hay desglose de pagos, renderizarlo
-                            if (payment_breakdown) {
-                                var breakdownHtml = '<div id="view-payment-breakdown"></div>';
-                                $('.wp-pos-closure-details').append(breakdownHtml);
-                                window.WP_POS_Closures.renderPaymentBreakdown(payment_breakdown);
-                            }
-                        } else {
-                            alert(response.data.message);
+                            console.log('Desglose final:', payment_breakdown);
+                        } catch(e) {
+                            console.error('Error al procesar desglose de pagos:', e);
+                            payment_breakdown = {
+                                cash: 0,
+                                card: 0,
+                                transfer: 0,
+                                check: 0,
+                                other: 0
+                            };
                         }
-                    },
-                    error: function(xhr, status, error) {
-                        alert('Error al cargar detalles del cierre.');
+                        
+                        // Crear un ID único para el modal
+                        var modalId = 'closure-details-' + closure.id;
+                        
+                        // Generar HTML para el diálogo
+                        var html = '<div id="' + modalId + '" class="wp-pos-closure-details">';
+                        html += '<div class="wp-pos-closure-info">';
+                        html += '<div class="closure-header">';
+                        html += '<h3>Cierre #' + closure.id + '</h3>';
+                        html += '<span class="closure-date">' + formatDate(closure.created_at) + '</span>';
+                        html += '</div>';
+                        
+                        html += '<div class="closure-metadata">';
+                        html += '<div><strong>Caja:</strong> ' + (closure.register_name || 'No disponible') + '</div>';
+                        html += '<div><strong>Usuario:</strong> ' + (closure.user_name || 'No disponible') + '</div>';
+                        html += '<div><strong>Estado:</strong> <span class="status-' + closure.status + '">' + getStatusText(closure.status) + '</span></div>';
+                        html += '</div>';
+                        
+                        html += '<div class="closure-amounts">';
+                        html += '<div><strong>Monto Inicial:</strong> ' + formatCurrency(closure.initial_amount) + '</div>';
+                        html += '<div><strong>Ventas:</strong> ' + formatCurrency(closure.sales_amount) + '</div>';
+                        html += '<div><strong>Monto Esperado:</strong> ' + formatCurrency(closure.expected_amount) + '</div>';
+                        html += '<div><strong>Monto Final:</strong> ' + formatCurrency(closure.final_amount || closure.actual_amount) + '</div>';
+                        
+                        var differenceClass = parseFloat(closure.difference) < 0 ? 'negative-amount' : 
+                                    (parseFloat(closure.difference) > 0 ? 'positive-amount' : '');
+                        html += '<div><strong>Diferencia:</strong> <span class="' + differenceClass + '">' + formatCurrency(closure.difference) + '</span></div>';
+                        html += '</div>';
+                        
+                        html += '<div class="payment-breakdown">';
+                        html += '<h4>Desglose por método de pago</h4>';
+                        html += '<div class="payment-breakdown-container"></div>';
+                        html += '</div>';
+                        
+                        // Si hay observaciones, mostrarlas
+                        if (closure.observations) {
+                            html += '<div class="closure-observations">';
+                            html += '<h4>Observaciones</h4>';
+                            html += '<p>' + closure.observations + '</p>';
+                            html += '</div>';
+                        }
+                        
+                        html += '</div>';
+                        html += '</div>';
+                            
+                        // Eliminar cualquier diálogo existente con el mismo ID para evitar duplicados
+                        $('#' + modalId).remove();
+                        
+                        // Crear el diálogo
+                        var $dialog = $(html).dialog({
+                            autoOpen: true,
+                            modal: true,
+                            title: 'Cierre #' + closure.id,
+                            width: 500,
+                            buttons: {
+                                "Cerrar": function() {
+                                    $(this).dialog("close");
+                                    // Destruir completamente el diálogo para evitar elementos huérfanos
+                                    $(this).dialog("destroy").remove();
+                                }
+                            },
+                            // Destruir el diálogo al cerrarlo para eliminar elementos huérfanos
+                            close: function() {
+                                $(this).dialog("destroy").remove();
+                            }
+                        });
+                        
+                        // Si hay desglose de pagos, renderizarlo
+                        if (payment_breakdown) {
+                            // Usar el contenedor específico de este diálogo
+                            window.WP_POS_Closures.renderPaymentBreakdown(payment_breakdown, $dialog.find('.payment-breakdown-container'));
+                        }
+                        
+                        // Si hay callback, ejecutarlo
+                        if (typeof callback === 'function') {
+                            callback(closure, $dialog);
+                        }
+                    } else {
+                        alert(response.data.message || 'Error al cargar detalles del cierre');
                     }
-                });
-                
-                return false;
+                },
+                error: function(xhr, status, error) {
+                    alert('Error al cargar detalles del cierre.');
+                }
             });
         },
         
@@ -549,59 +780,82 @@ window.WP_POS_Closures = window.WP_POS_Closures || {};
          * Cargar historial de cierres
          */
         loadHistory: function() {
-            var register_id = $('#history-filter-register').val();
-            var date_from = $('#history-filter-from').val();
-            var date_to = $('#history-filter-to').val();
+            var self = this;
+            var register_id = $('#history-register').val();
+            var status = $('#history-status').val();
+            var date_from = $('#history-date-from').val();
+            var date_to = $('#history-date-to').val();
             
             $.ajax({
-                url: wp_pos_closures.ajax_url,
+                url: ajaxurl,
                 type: 'POST',
                 dataType: 'json',
                 data: {
-                    action: 'wp_pos_closures_get_closures',
+                    action: 'wp_pos_closures_get_history',
                     nonce: wp_pos_closures.nonce,
                     register_id: register_id,
+                    status: status,
                     date_from: date_from,
                     date_to: date_to
                 },
                 success: function(response) {
-                    if (response.success) {
+                    console.log('Respuesta de historial:', response);
+                    var html = '';
+                    
+                    if (!response.success || !response.data.closures || response.data.closures.length === 0) {
+                        html = '<tr><td colspan="8">No se encontraron cierres</td></tr>';
+                    } else {
                         var closures = response.data.closures;
-                        var html = '';
-                        
-                        if (closures.length === 0) {
-                            html = '<tr><td colspan="8">No hay cierres que coincidan con los criterios.</td></tr>';
-                        } else {
-                            $.each(closures, function(index, closure) {
-                                var status = '';
-                                
-                                if (closure.status === 'pending') {
-                                    status = '<span class="status pending">Pendiente</span>';
-                                } else if (closure.status === 'approved') {
-                                    status = '<span class="status approved">Aprobado</span>';
-                                } else if (closure.status === 'rejected') {
-                                    status = '<span class="status rejected">Rechazado</span>';
-                                }
-                                
-                                html += '<tr>' +
-                                    '<td>' + closure.id + '</td>' +
-                                    '<td>' + closure.date + '</td>' +
-                                    '<td>' + closure.register_name + '</td>' +
-                                    '<td>' + closure.user_name + '</td>' +
-                                    '<td>$' + parseFloat(closure.total_sales).toFixed(2) + '</td>' +
-                                    '<td>' + status + '</td>' +
-                                    '<td>' + (closure.observations || '-') + '</td>' +
-                                    '<td><a href="#" class="view-closure" data-id="' + closure.id + '">Ver</a></td>' +
-                                    '</tr>';
-                            });
-                        }
-                        
-                        $('#closures-table tbody').html(html);
+                        $.each(closures, function(index, closure) {
+                            var status = '';
+                            
+                            if (closure.status === 'pending') {
+                                status = '<span class="status pending">Pendiente</span>';
+                            } else if (closure.status === 'approved') {
+                                status = '<span class="status approved">Aprobado</span>';
+                            } else if (closure.status === 'rejected') {
+                                status = '<span class="status rejected">Rechazado</span>';
+                            }
+                            
+                            html += '<tr>' +
+                                '<td>' + closure.id + '</td>' +
+                                '<td>' + closure.date + '</td>' +
+                                '<td>' + closure.register_name + '</td>' +
+                                '<td>' + closure.user_name + '</td>' +
+                                '<td>$' + parseFloat(closure.total_sales).toFixed(2) + '</td>' +
+                                '<td>' + status + '</td>' +
+                                '<td>' + (closure.observations || '-') + '</td>' +
+                                '<td><a href="#" class="view-closure" data-id="' + closure.id + '">Ver</a></td>' +
+                                '</tr>';
+                        });
                     }
+                    
+                    $('#closures-table tbody').html(html);
                 },
                 error: function() {
                     alert('Error al cargar historial de cierres.');
                 }
+            });
+        },
+        
+        /**
+         * Configurar funcionalidad para ver detalles de cierre
+         */
+        setupClosureView: function() {
+            // Manejar click en botones "Ver" para mostrar detalles de cierre
+            $(document).on('click', '.view-closure', function(e) {
+                e.preventDefault();
+                var closureId = $(this).data('id');
+                if (closureId) {
+                    // Usar la funcionalidad existente en closures-history.js
+                    if (window.WP_POS_Closures_History && typeof window.WP_POS_Closures_History.viewClosure === 'function') {
+                        window.WP_POS_Closures_History.viewClosure(closureId);
+                    } else {
+                        // Si no está disponible la función en history, usar la local
+                        window.WP_POS_Closures.getClosureDetails(closureId);
+                    }
+                }
+                return false;
             });
         },
         
