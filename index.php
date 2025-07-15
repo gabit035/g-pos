@@ -130,6 +130,9 @@ define('WP_POS_PLUGIN_DIR', trailingslashit(plugin_dir_path(__FILE__)));
 define('WP_POS_PLUGIN_URL', trailingslashit(plugin_dir_url(__FILE__)));
 define('WP_POS_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
+// Backward compatibility
+define('WP_POS_URL', WP_POS_PLUGIN_URL);
+
 // Definir rutas de directorios importantes
 define('WP_POS_INCLUDES_DIR', WP_POS_PLUGIN_DIR . 'includes/');
 define('WP_POS_TEMPLATES_DIR', WP_POS_PLUGIN_DIR . 'templates/');

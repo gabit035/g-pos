@@ -172,6 +172,22 @@ $current_view = 'form';
                 </div>
             </div>
         </div>
+
+        <!-- Desglose de otros métodos de pago del día (solo lectura) -->
+        <div class="wp-pos-form-field" id="payment-method-breakdown-container">
+            <label>
+                <?php _e('Desglose otros métodos de pago del día', 'wp-pos'); ?>
+                <span class="dashicons dashicons-update" id="refresh-breakdown" title="Actualizar desglose" style="cursor:pointer; font-size:18px; vertical-align:text-bottom; color:#0073aa;"></span>
+            </label>
+            <div id="payment-method-breakdown" style="background:#f9f9f9; border:1px solid #e1e1e1; border-radius:4px; padding:15px; margin-bottom:15px; font-size:15px; box-shadow:0 1px 4px rgba(0,0,0,0.05);">
+                <em><?php _e('Cargando desglose...', 'wp-pos'); ?></em>
+            </div>
+            <!-- Campo oculto para guardar el desglose de pagos en formato JSON -->
+            <input type="hidden" name="payment_breakdown" id="payment_breakdown" value="">
+            
+            <!-- Campos ocultos para guardar en el historial -->
+            <input type="hidden" id="payment_breakdown_stored" name="payment_breakdown_stored" value="">
+        </div>
         
         <div class="wp-pos-form-actions">
             <button type="button" id="diagnose-sales" class="wp-pos-button wp-pos-button-secondary">
@@ -741,11 +757,33 @@ jQuery(document).ready(function($) {
         console.log(' Cálculo automático inicial habilitado (delay: ' + window.WP_POS_CONFIG.autoCalculateDelay + 'ms)');
         setTimeout(function() {
             calculateAmounts();
+            // Cargar desglose de pagos automáticamente al iniciar
+            console.log('Cargando desglose de pagos al iniciar...');
+            WP_POS_Closures.loadPaymentBreakdown();
         }, window.WP_POS_CONFIG.autoCalculateDelay);
     } else {
         console.log(' Cálculo automático inicial DESHABILITADO');
         console.log(' Usa el botón "Calcular Montos" para actualizar manualmente');
     }
+    
+    // Configurar eventos para actualizar automáticamente el desglose de pagos
+    $('#closure-date, #closure-user').on('change', function() {
+        console.log('Cambio detectado en fecha o usuario, actualizando desglose...');
+        WP_POS_Closures.loadPaymentBreakdown();
+    });
+    
+    // Escuchar el evento de cálculo de montos para actualizar el desglose
+    $(document).on('wp-pos-amounts-calculated', function(e, data) {
+        console.log('Evento de cálculo detectado, actualizando desglose automáticamente');
+        WP_POS_Closures.loadPaymentBreakdown();
+    });
+    
+    // Botón de actualización manual del desglose de pagos
+    $('#refresh-breakdown').on('click', function() {
+        console.log('Botón de actualización del desglose clickeado');
+        $('#payment-method-breakdown').html('<em><?php _e("Actualizando desglose...", "wp-pos"); ?></em>');
+        WP_POS_Closures.loadPaymentBreakdown();
+    });
     
     // Función para calcular los montos
     function calculateAmounts(callback) {
@@ -828,6 +866,14 @@ jQuery(document).ready(function($) {
                     
                     // Recalcular diferencia
                     calculateDifference();
+                    
+                    // Disparar evento para actualizar automáticamente el desglose de pagos
+                    $(document).trigger('wp-pos-amounts-calculated', [{
+                        date: date,
+                        register_id: register_id,
+                        user_id: user_id
+                    }]);
+                    console.log('Evento wp-pos-amounts-calculated disparado para actualizar desglose');
                     
                     // Ejecutar callback si existe
                     if (typeof callback === 'function') {

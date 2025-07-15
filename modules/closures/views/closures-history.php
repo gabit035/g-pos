@@ -101,6 +101,7 @@ jQuery(document).ready(function($) {
                     <th class="column-initial"><?php _e('Monto Inicial', 'wp-pos'); ?></th>
                     <th class="column-expected"><?php _e('Esperado', 'wp-pos'); ?></th>
                     <th class="column-actual"><?php _e('Final', 'wp-pos'); ?></th>
+<th class="column-payment-breakdown"><?php _e('Métodos de Pago', 'wp-pos'); ?></th>
                     <th class="column-difference"><?php _e('Diferencia', 'wp-pos'); ?></th>
                     <th class="column-status"><?php _e('Estado', 'wp-pos'); ?></th>
                     <th class="column-actions"><?php _e('Acciones', 'wp-pos'); ?></th>
@@ -108,7 +109,7 @@ jQuery(document).ready(function($) {
             </thead>
             <tbody id="closures-list">
                 <tr class="no-items">
-                    <td colspan="9"><?php _e('Cargando datos...', 'wp-pos'); ?></td>
+                    <td colspan="10"><?php _e('Cargando datos...', 'wp-pos'); ?></td>
                 </tr>
             </tbody>
         </table>

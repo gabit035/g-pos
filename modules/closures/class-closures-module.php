@@ -68,6 +68,7 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         add_action('wp_ajax_wp_pos_closures_diagnostic', [$this, 'ajax_diagnostic']);
         add_action('wp_ajax_wp_pos_get_available_payment_methods', [$this, 'ajax_get_available_payment_methods']);
         add_action('wp_ajax_wp_pos_forensic_investigation', [$this, 'ajax_forensic_investigation']);
+        add_action('wp_ajax_wp_pos_closures_get_breakdown', [$this, 'ajax_get_breakdown']);
         
         // Inicializar base de datos si es necesario
         add_action('admin_init', [$this, 'ensure_tables_exist']);
@@ -452,6 +453,7 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
             approved_by bigint(20) unsigned DEFAULT NULL,
             status varchar(20) DEFAULT 'pending',
             created_at datetime DEFAULT NULL,
+            payment_breakdown LONGTEXT DEFAULT NULL,
             PRIMARY KEY (id),
             KEY register_id (register_id),
             KEY user_id (user_id),
@@ -727,7 +729,16 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         $closures = $wpdb->get_results($prepared_query, ARRAY_A);
         $total_items = (int) $wpdb->get_var($prepared_count_query);
         $total_pages = ceil($total_items / $per_page);
-        
+        // Decodificar desglose de métodos de pago
+        foreach ($closures as &$closure) {
+            if (isset($closure['payment_breakdown']) && !empty($closure['payment_breakdown'])) {
+                $decoded = json_decode($closure['payment_breakdown'], true);
+                $closure['payment_breakdown_decoded'] = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+            } else {
+                $closure['payment_breakdown_decoded'] = null;
+            }
+        }
+        unset($closure);
         // Enviar respuesta
         wp_send_json_success([
             'closures' => $closures,
@@ -896,12 +907,28 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
             'actual_amount' => $counted_amount, // actual_amount en lugar de counted_amount
             'difference' => $difference,
             'justification' => isset($_POST['notes']) ? sanitize_textarea_field($_POST['notes']) : '',
-            'status' => 'pending',  // El cierre estu00e1 pendiente hasta que sea aprobado
+            'status' => 'pending',  // El cierre está pendiente hasta que sea aprobado
             'created_at' => $current_time
         ];
+        // Guardar desglose de métodos de pago si viene en el request
+        if (isset($_POST['payment_breakdown'])) {
+            $payment_breakdown = wp_unslash($_POST['payment_breakdown']);
+            if (is_string($payment_breakdown)) {
+                // Validar que sea JSON válido
+                json_decode($payment_breakdown);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $data['payment_breakdown'] = $payment_breakdown;
+                } else {
+                    $this->debug_log('payment_breakdown inválido, ignorado', $payment_breakdown);
+                }
+            }
+        }
         
         // Formatos para insertar
         $formats = ['%d', '%d', '%f', '%f', '%f', '%f', '%s', '%s', '%s'];
+        if (isset($data['payment_breakdown'])) {
+            $formats[] = '%s';
+        }
         
         // Registrar los datos que se insertarán
         $this->debug_log('Datos a insertar', $data);
@@ -2532,6 +2559,13 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
             wp_send_json_error(['message' => __('Cierre no encontrado.', 'wp-pos')]);
         }
         
+        // Decodificar desglose de métodos de pago si existe
+        if (isset($closure['payment_breakdown']) && !empty($closure['payment_breakdown'])) {
+            $decoded = json_decode($closure['payment_breakdown'], true);
+            $closure['payment_breakdown_decoded'] = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+        } else {
+            $closure['payment_breakdown_decoded'] = null;
+        }
         wp_send_json_success(['closure' => $closure]);
     }
     
@@ -2955,5 +2989,465 @@ class WP_POS_Closures_Module extends WP_POS_Module_Abstract {
         // Enviar respuesta
         $this->debug_log("Datos del dashboard generados correctamente", $dashboard_data);
         wp_send_json_success($dashboard_data);
+    }
+
+    /**
+     * Calcula el monto de un método de pago específico
+     * 
+     * @param string $payment_method Método de pago (cash, card, transfer, check, other)
+     * @param int $register_id ID de la caja registradora
+     * @param int $user_id ID del usuario (opcional)
+     * @param string $date Fecha en formato Y-m-d
+     * @return float Monto total para el método de pago
+     */
+    private function calculate_payment_method_amount($payment_method, $register_id, $user_id, $date) {
+        global $wpdb;
+        
+        // Log de inicio con parámetros recibidos
+        $this->debug_log("=== CALCULANDO MÉTODO DE PAGO: {$payment_method} ===", [
+            'register_id' => $register_id,
+            'user_id' => $user_id,
+            'date' => $date,
+            'user_filtering_enabled' => ($user_id > 0)
+        ]);
+        
+        // Mapeo de valores posibles para cada método de pago en la base de datos
+        $payment_mappings = [
+            'cash' => ['cash', 'efectivo', '1', 'Cash', 'Efectivo', 'CASH', 'EFECTIVO'],
+            'card' => ['card', 'tarjeta', 'credit_card', 'tarjeta_credito', '2', 'Card', 'Tarjeta', 'CARD'],
+            'transfer' => ['transfer', 'transferencia', 'bank_transfer', '4', 'Transfer', 'Transferencia', 'TRANSFER'],
+            'check' => ['check', 'cheque', '5', 'Check', 'Cheque', 'CHECK'],
+            'other' => ['other', 'otro', '6', 'Other', 'Otro', 'OTHER']
+        ];
+        
+        // Verificar que el método solicitado existe en nuestro mapeo
+        if (!isset($payment_mappings[$payment_method])) {
+            $this->debug_log("❌ ERROR: Método de pago no reconocido: {$payment_method}");
+            return 0;
+        }
+        
+        // Valores a buscar en la base de datos para este método
+        $method_values = $payment_mappings[$payment_method];
+        $total_amount = 0;
+        
+        // 1. Consulta a pos_sales (ventas)
+        $pos_sales_table = $wpdb->prefix . 'pos_sales';
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$pos_sales_table}'") === $pos_sales_table) {
+            // Obtener columnas de la tabla
+            $column_names = $wpdb->get_col("DESC {$pos_sales_table}", 0);
+            
+            // Buscar columnas relevantes: método de pago, total, fecha
+            $payment_method_column = null;
+            $total_column = 'total'; // Default
+            $date_column = 'created_at'; // Default
+            
+            // Buscar columna de método de pago
+            foreach ($column_names as $column) {
+                $column_lower = strtolower($column);
+                if (strpos($column_lower, 'payment_method') !== false || 
+                    strpos($column_lower, 'payment') !== false || 
+                    strpos($column_lower, 'method') !== false) {
+                    $payment_method_column = $column;
+                    break;
+                }
+            }
+            
+            // Buscar columna de total/monto
+            if (!in_array('total', $column_names)) {
+                foreach ($column_names as $column) {
+                    $column_lower = strtolower($column);
+                    if (strpos($column_lower, 'total') !== false || 
+                        strpos($column_lower, 'amount') !== false || 
+                        strpos($column_lower, 'monto') !== false) {
+                        $total_column = $column;
+                        break;
+                    }
+                }
+            }
+            
+            // Buscar columna de fecha
+            if (!in_array('created_at', $column_names)) {
+                foreach ($column_names as $column) {
+                    $column_lower = strtolower($column);
+                    if (strpos($column_lower, 'date') !== false || 
+                        strpos($column_lower, 'created') !== false || 
+                        strpos($column_lower, 'fecha') !== false) {
+                        $date_column = $column;
+                        break;
+                    }
+                }
+            }
+            
+            // Si encontramos columna de método de pago, construir consulta
+            if ($payment_method_column) {
+                $query = "SELECT SUM({$total_column}) as total FROM {$pos_sales_table} WHERE ";
+                $conditions = [];
+                $args = [];
+                
+                // Condición para método de pago (usando OR para múltiples posibles valores)
+                $method_placeholders = array_fill(0, count($method_values), '%s');
+                $conditions[] = "{$payment_method_column} IN (" . implode(", ", $method_placeholders) . ")";
+                $args = array_merge($args, $method_values);
+                
+                // Condición para fecha
+                $conditions[] = "DATE({$date_column}) = %s";
+                $args[] = $date;
+                
+                // Condición para caja registradora (si existe la columna)
+                if (in_array('register_id', $column_names)) {
+                    $conditions[] = "register_id = %d";
+                    $args[] = $register_id;
+                }
+                
+                // Filtrar por usuario si se especificó
+                if ($user_id > 0) {
+                    $user_columns = ['user_id', 'created_by', 'cashier_id', 'seller_id', 'employee_id'];
+                    $user_column_found = false;
+                    
+                    foreach ($user_columns as $user_col) {
+                        if (in_array($user_col, $column_names)) {
+                            $conditions[] = "{$user_col} = %d";
+                            $args[] = $user_id;
+                            $user_column_found = true;
+                            $this->debug_log("✅ Filtro por usuario aplicado en pos_sales", [
+                                'columna' => $user_col,
+                                'user_id' => $user_id
+                            ]);
+                            break;
+                        }
+                    }
+                    
+                    if (!$user_column_found && $user_id > 0) {
+                        $this->debug_log("⚠️ ADVERTENCIA: No se encontró columna de usuario en pos_sales para filtrar");
+                    }
+                }
+                
+                // Construir consulta final
+                $query .= implode(" AND ", $conditions);
+                $prepared_query = $wpdb->prepare($query, $args);
+                
+                // Ejecutar consulta y obtener resultado
+                $this->debug_log("Consulta a pos_sales para {$payment_method}", ['query' => $prepared_query]);
+                $result = $wpdb->get_var($prepared_query);
+                $sales_total = (float)($result ?: 0);
+                $total_amount += $sales_total;
+                
+                $this->debug_log("Resultado de pos_sales para {$payment_method}", ['total' => $sales_total]);
+            }
+        }
+        
+        // 2. Consulta a pos_transactions (transacciones)
+        $pos_transactions_table = $wpdb->prefix . 'pos_transactions';
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$pos_transactions_table}'") === $pos_transactions_table) {
+            // Obtener columnas de la tabla
+            $column_names = $wpdb->get_col("DESC {$pos_transactions_table}", 0);
+            
+            // Buscar columnas relevantes: método de pago, monto, fecha
+            $payment_method_column = null;
+            $amount_column = 'amount'; // Default
+            $date_column = 'created_at'; // Default
+            
+            // Buscar columna de método de pago
+            foreach ($column_names as $column) {
+                $column_lower = strtolower($column);
+                if (strpos($column_lower, 'payment_method') !== false || 
+                    strpos($column_lower, 'payment') !== false || 
+                    strpos($column_lower, 'method') !== false) {
+                    $payment_method_column = $column;
+                    break;
+                }
+            }
+            
+            // Buscar columna de monto
+            if (!in_array('amount', $column_names)) {
+                foreach ($column_names as $column) {
+                    $column_lower = strtolower($column);
+                    if (strpos($column_lower, 'amount') !== false || 
+                        strpos($column_lower, 'total') !== false || 
+                        strpos($column_lower, 'monto') !== false) {
+                        $amount_column = $column;
+                        break;
+                    }
+                }
+            }
+            
+            // Buscar columna de fecha
+            if (!in_array('created_at', $column_names)) {
+                foreach ($column_names as $column) {
+                    $column_lower = strtolower($column);
+                    if (strpos($column_lower, 'date') !== false || 
+                        strpos($column_lower, 'created') !== false || 
+                        strpos($column_lower, 'fecha') !== false) {
+                        $date_column = $column;
+                        break;
+                    }
+                }
+            }
+            
+            // Si encontramos columna de método de pago, construir consulta
+            if ($payment_method_column) {
+                $query = "SELECT SUM({$amount_column}) as total FROM {$pos_transactions_table} WHERE ";
+                $conditions = [];
+                $args = [];
+                
+                // Condición para método de pago (usando OR para múltiples posibles valores)
+                $method_placeholders = array_fill(0, count($method_values), '%s');
+                $conditions[] = "{$payment_method_column} IN (" . implode(", ", $method_placeholders) . ")";
+                $args = array_merge($args, $method_values);
+                
+                // Condición para fecha
+                $conditions[] = "DATE({$date_column}) = %s";
+                $args[] = $date;
+                
+                // Condición para caja registradora (si existe la columna)
+                if (in_array('register_id', $column_names)) {
+                    $conditions[] = "register_id = %d";
+                    $args[] = $register_id;
+                }
+                
+                // Filtrar por usuario si se especificó
+                if ($user_id > 0) {
+                    $user_columns = ['user_id', 'created_by', 'cashier_id', 'seller_id', 'employee_id'];
+                    $user_column_found = false;
+                    
+                    foreach ($user_columns as $user_col) {
+                        if (in_array($user_col, $column_names)) {
+                            $conditions[] = "{$user_col} = %d";
+                            $args[] = $user_id;
+                            $user_column_found = true;
+                            $this->debug_log("✅ Filtro por usuario aplicado en pos_transactions", [
+                                'columna' => $user_col,
+                                'user_id' => $user_id
+                            ]);
+                            break;
+                        }
+                    }
+                    
+                    if (!$user_column_found && $user_id > 0) {
+                        $this->debug_log("⚠️ ADVERTENCIA: No se encontró columna de usuario en pos_transactions para filtrar");
+                    }
+                }
+                
+                // Construir consulta final
+                $query .= implode(" AND ", $conditions);
+                $prepared_query = $wpdb->prepare($query, $args);
+                
+                // Ejecutar consulta y obtener resultado
+                $this->debug_log("Consulta a pos_transactions para {$payment_method}", ['query' => $prepared_query]);
+                $result = $wpdb->get_var($prepared_query);
+                $transactions_total = (float)($result ?: 0);
+                $total_amount += $transactions_total;
+                
+                $this->debug_log("Resultado de pos_transactions para {$payment_method}", ['total' => $transactions_total]);
+            }
+        }
+        
+        // 3. Consulta a pos_payments (pagos)
+        $pos_payments_table = $wpdb->prefix . 'pos_payments';
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$pos_payments_table}'") === $pos_payments_table) {
+            // Obtener columnas de la tabla
+            $column_names = $wpdb->get_col("DESC {$pos_payments_table}", 0);
+            
+            // Buscar columnas relevantes: método de pago, monto, fecha
+            $payment_method_column = null;
+            $amount_column = 'amount'; // Default
+            $date_column = 'created_at'; // Default
+            
+            // Buscar columna de método de pago
+            foreach ($column_names as $column) {
+                $column_lower = strtolower($column);
+                if (strpos($column_lower, 'payment_method') !== false || 
+                    strpos($column_lower, 'payment') !== false || 
+                    strpos($column_lower, 'method') !== false) {
+                    $payment_method_column = $column;
+                    break;
+                }
+            }
+            
+            // Buscar columna de monto
+            if (!in_array('amount', $column_names)) {
+                foreach ($column_names as $column) {
+                    $column_lower = strtolower($column);
+                    if (strpos($column_lower, 'amount') !== false || 
+                        strpos($column_lower, 'total') !== false || 
+                        strpos($column_lower, 'monto') !== false) {
+                        $amount_column = $column;
+                        break;
+                    }
+                }
+            }
+            
+            // Buscar columna de fecha
+            if (!in_array('created_at', $column_names)) {
+                foreach ($column_names as $column) {
+                    $column_lower = strtolower($column);
+                    if (strpos($column_lower, 'date') !== false || 
+                        strpos($column_lower, 'created') !== false || 
+                        strpos($column_lower, 'fecha') !== false) {
+                        $date_column = $column;
+                        break;
+                    }
+                }
+            }
+            
+            // Si encontramos columna de método de pago, construir consulta
+            if ($payment_method_column) {
+                $query = "SELECT SUM({$amount_column}) as total FROM {$pos_payments_table} WHERE ";
+                $conditions = [];
+                $args = [];
+                
+                // Condición para método de pago (usando OR para múltiples posibles valores)
+                $method_placeholders = array_fill(0, count($method_values), '%s');
+                $conditions[] = "{$payment_method_column} IN (" . implode(", ", $method_placeholders) . ")";
+                $args = array_merge($args, $method_values);
+                
+                // Condición para fecha
+                $conditions[] = "DATE({$date_column}) = %s";
+                $args[] = $date;
+                
+                // Condición para caja registradora (si existe la columna)
+                if (in_array('register_id', $column_names)) {
+                    $conditions[] = "register_id = %d";
+                    $args[] = $register_id;
+                }
+                
+                // Filtrar por usuario si se especificó
+                if ($user_id > 0) {
+                    $user_columns = ['user_id', 'created_by', 'cashier_id', 'seller_id', 'employee_id'];
+                    $user_column_found = false;
+                    
+                    foreach ($user_columns as $user_col) {
+                        if (in_array($user_col, $column_names)) {
+                            $conditions[] = "{$user_col} = %d";
+                            $args[] = $user_id;
+                            $user_column_found = true;
+                            $this->debug_log("✅ Filtro por usuario aplicado en pos_payments", [
+                                'columna' => $user_col,
+                                'user_id' => $user_id
+                            ]);
+                            break;
+                        }
+                    }
+                    
+                    if (!$user_column_found && $user_id > 0) {
+                        $this->debug_log("⚠️ ADVERTENCIA: No se encontró columna de usuario en pos_payments para filtrar");
+                    }
+                }
+                
+                // Construir consulta final
+                $query .= implode(" AND ", $conditions);
+                $prepared_query = $wpdb->prepare($query, $args);
+                
+                // Ejecutar consulta y obtener resultado
+                $this->debug_log("Consulta a pos_payments para {$payment_method}", ['query' => $prepared_query]);
+                $result = $wpdb->get_var($prepared_query);
+                $payments_total = (float)($result ?: 0);
+                $total_amount += $payments_total;
+                
+                $this->debug_log("Resultado de pos_payments para {$payment_method}", ['total' => $payments_total]);
+            }
+        }
+        
+        $this->debug_log("✅ Total calculado para método {$payment_method}", ['total_final' => $total_amount]);
+        return $total_amount;
+    }
+    
+    /**
+     * AJAX: Obtener el desglose de métodos de pago para fecha y caja específica
+     * 
+     * Endpoint para obtener automáticamente el desglose de métodos de pago cuando cambia la fecha o usuario
+     * en el formulario de cierre. Diseñado para trabajar con la funcionalidad de auto-update.
+     */
+    public function ajax_get_breakdown() {
+        // Log completo de la petición
+        $this->debug_log('⭐️ INICIO PETICIÓN ajax_get_breakdown ⭐️', [
+            'GET' => $_GET,
+            'POST' => $_POST,
+            'REQUEST' => $_REQUEST,
+            'nonce' => isset($_REQUEST['nonce']) ? substr($_REQUEST['nonce'], 0, 5) . '...' : 'no proporcionado'
+        ]);
+        
+        try {
+            // Verificar nonce de seguridad
+            if (!isset($_REQUEST['nonce'])) {
+                $this->debug_log('❌ ERROR: Nonce no enviado en ajax_get_breakdown');
+                wp_send_json_error(['message' => 'Nonce de seguridad no proporcionado']);
+                return;
+            }
+            
+            if (!wp_verify_nonce($_REQUEST['nonce'], 'wp_pos_closures_nonce')) {
+                $this->debug_log('❌ ERROR: Verificación de nonce falló', [
+                    'nonce_proporcionado' => substr($_REQUEST['nonce'], 0, 5) . '...'
+                ]);
+                wp_send_json_error(['message' => 'Nonce de seguridad inválido']);
+                return;
+            } else {
+                $this->debug_log('✅ Verificación de nonce correcta');
+            }
+            
+            // Obtener parámetros
+            $date = isset($_REQUEST['date']) ? sanitize_text_field($_REQUEST['date']) : null;
+            $register_id = isset($_REQUEST['register_id']) ? intval($_REQUEST['register_id']) : 0;
+            $user_id = isset($_REQUEST['user_id']) ? intval($_REQUEST['user_id']) : 0;
+            
+            $this->debug_log('📝 Parámetros procesados', [
+                'date' => $date,
+                'register_id' => $register_id,
+                'user_id' => $user_id
+            ]);
+            
+            if (!$date || !$register_id) {
+                $this->debug_log('❌ ERROR: Parámetros incompletos en ajax_get_breakdown');
+                wp_send_json_error(['message' => 'Fecha o caja registradora no especificadas']);
+                return;
+            }
+            
+            // Verificar si es una fecha válida
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+                $this->debug_log('❌ ERROR: Formato de fecha inválido', ['date' => $date]);
+                wp_send_json_error(['message' => 'Formato de fecha inválido']);
+                return;
+            }
+            
+            $this->debug_log('🔍 Calculando desglose de métodos de pago', [
+                'date' => $date,
+                'register_id' => $register_id,
+                'user_id' => $user_id,
+                'user_filtering_enabled' => ($user_id > 0)
+            ]);
+            
+            // Calcular cada método de pago con captura de errores individual
+            $payment_methods = [];
+            $methods_to_calculate = ['cash', 'card', 'transfer', 'check', 'other'];
+            
+            foreach ($methods_to_calculate as $method) {
+                try {
+                    $payment_methods[$method] = $this->calculate_payment_method_amount($method, $register_id, $user_id, $date);
+                    $this->debug_log("✅ Método {$method} calculado: " . $payment_methods[$method]);
+                } catch (Exception $e) {
+                    $this->debug_log("❌ Error al calcular método {$method}: " . $e->getMessage());
+                    $payment_methods[$method] = 0; // Valor por defecto en caso de error
+                }
+            }
+            
+            // Preparar respuesta
+            $response = [
+                'breakdown' => $payment_methods,
+                'date' => $date,
+                'register_id' => $register_id,
+                'user_id' => $user_id
+            ];
+            
+            $this->debug_log('✅ Desglose de métodos de pago calculado con éxito', $response);
+            
+            // Enviar respuesta
+            wp_send_json_success($response);
+            
+        } catch (Exception $e) {
+            $this->debug_log('❌ ERROR GENERAL en ajax_get_breakdown: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            wp_send_json_error(['message' => 'Error al calcular el desglose: ' . $e->getMessage()]);
+        }
     }
 }

@@ -283,13 +283,12 @@ window.WP_POS_Closures = window.WP_POS_Closures || {};
             });
             
             // Refrescar desglose de pagos al cambiar fecha o usuario
-            $('#closure-date, #closure-user').on('change', function() {
-                console.log('Fecha o usuario cambiado, actualizando desglose');
+            $('#date, #user').on('change', function() {
                 self.loadPaymentBreakdown();
             });
             
             // Botón de refrescar desglose de pagos
-            $('#refresh-breakdown').on('click', function(e) {
+            $('#refresh-payment-breakdown').on('click', function(e) {
                 e.preventDefault();
                 self.loadPaymentBreakdown();
             });
@@ -307,9 +306,9 @@ window.WP_POS_Closures = window.WP_POS_Closures || {};
             var self = this;
             console.log('loadPaymentBreakdown llamado');
             
-            var date = $('#closure-date').val();
-            var register_id = $('#closure-register').val();
-            var user_id = $('#closure-user').val();
+            var date = $('#date').val();
+            var register_id = $('#register').val();
+            var user_id = $('#user').val();
             
             if (!date) {
                 console.log('Fecha no seleccionada, cancelando carga de desglose');
@@ -421,9 +420,9 @@ window.WP_POS_Closures = window.WP_POS_Closures || {};
          */
         calculateAmounts: function() {
             var self = this;
-            var register_id = $('#closure-register').val();
-            var date = $('#closure-date').val();
-            var user_id = $('#closure-user').val();
+            var register_id = $('#register').val();
+            var date = $('#date').val();
+            var user_id = $('#user').val();
             
             if (!register_id || !date) {
                 alert('Debes seleccionar una caja registradora y una fecha.');
