@@ -61,18 +61,18 @@ jQuery(document).ready(function($) {
     
     <div class="wp-pos-filter-bar" style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
         <div class="filter-section" style="margin-right: 15px;">
-            <label for="filter-date-from"><?php _e('Desde:', 'wp-pos'); ?></label>
-            <input type="date" id="filter-date-from" value="<?php echo $month_start; ?>">
+            <label for="history-filter-from"><?php _e('Desde:', 'wp-pos'); ?></label>
+            <input type="date" id="history-filter-from" value="<?php echo $month_start; ?>">
         </div>
         
         <div class="filter-section">
-            <label for="filter-date-to"><?php _e('Hasta:', 'wp-pos'); ?></label>
-            <input type="date" id="filter-date-to" value="<?php echo $current_date; ?>">
+            <label for="history-filter-to"><?php _e('Hasta:', 'wp-pos'); ?></label>
+            <input type="date" id="history-filter-to" value="<?php echo $current_date; ?>">
         </div>
         
         <div class="filter-section">
-            <label for="filter-status"><?php _e('Estado:', 'wp-pos'); ?></label>
-            <select id="filter-status">
+            <label for="history-filter-status"><?php _e('Estado:', 'wp-pos'); ?></label>
+            <select id="history-filter-status">
                 <option value=""><?php _e('Todos', 'wp-pos'); ?></option>
                 <option value="pending"><?php _e('Pendiente', 'wp-pos'); ?></option>
                 <option value="approved"><?php _e('Aprobado', 'wp-pos'); ?></option>
@@ -81,7 +81,7 @@ jQuery(document).ready(function($) {
         </div>
         
         <div class="filter-actions">
-            <button id="filter-button" class="button button-primary">
+            <button id="filter-history" class="button button-primary">
                 <span class="dashicons dashicons-filter"></span> <?php _e('Filtrar', 'wp-pos'); ?>
             </button>
             
@@ -98,10 +98,9 @@ jQuery(document).ready(function($) {
                     <th class="column-id"><?php _e('ID', 'wp-pos'); ?></th>
                     <th class="column-date"><?php _e('Fecha', 'wp-pos'); ?></th>
                     <th class="column-cashier"><?php _e('Cajero', 'wp-pos'); ?></th>
-                    <th class="column-initial"><?php _e('Monto Inicial', 'wp-pos'); ?></th>
+                    <th class="column-initial"><?php _e('Monto<br>Inicial', 'wp-pos'); ?></th>
                     <th class="column-expected"><?php _e('Esperado', 'wp-pos'); ?></th>
                     <th class="column-actual"><?php _e('Final', 'wp-pos'); ?></th>
-<th class="column-payment-breakdown"><?php _e('Métodos de Pago', 'wp-pos'); ?></th>
                     <th class="column-difference"><?php _e('Diferencia', 'wp-pos'); ?></th>
                     <th class="column-status"><?php _e('Estado', 'wp-pos'); ?></th>
                     <th class="column-actions"><?php _e('Acciones', 'wp-pos'); ?></th>
@@ -109,7 +108,7 @@ jQuery(document).ready(function($) {
             </thead>
             <tbody id="closures-list">
                 <tr class="no-items">
-                    <td colspan="10"><?php _e('Cargando datos...', 'wp-pos'); ?></td>
+                    <td colspan="9"><?php _e('Cargando datos...', 'wp-pos'); ?></td>
                 </tr>
             </tbody>
         </table>
@@ -118,15 +117,15 @@ jQuery(document).ready(function($) {
             <div class="tablenav-pages">
                 <span class="displaying-num" id="items-count">0 <?php _e('elementos', 'wp-pos'); ?></span>
                 <span class="pagination-links" id="pagination-links">
-                    <a class="first-page button" id="first-page"><span class="screen-reader-text"><?php _e('Primera pu00e1gina', 'wp-pos'); ?></span><span aria-hidden="true">&laquo;</span></a>
-                    <a class="prev-page button" id="prev-page"><span class="screen-reader-text"><?php _e('Pu00e1gina anterior', 'wp-pos'); ?></span><span aria-hidden="true">&lsaquo;</span></a>
+                    <a class="first-page button" id="first-page"><span class="screen-reader-text"><?php _e('Primera Pagina', 'wp-pos'); ?></span><span aria-hidden="true">&laquo;</span></a>
+                    <a class="prev-page button" id="prev-page"><span class="screen-reader-text"><?php _e('Pagina anterior', 'wp-pos'); ?></span><span aria-hidden="true">&lsaquo;</span></a>
                     <span class="paging-input">
-                        <label for="current-page-selector" class="screen-reader-text"><?php _e('Pu00e1gina actual', 'wp-pos'); ?></label>
+                        <label for="current-page-selector" class="screen-reader-text"><?php _e('Pagina actual', 'wp-pos'); ?></label>
                         <input class="current-page" id="current-page" type="number" min="1" value="1" size="1">
                         <span class="tablenav-paging-text"> <?php _e('de', 'wp-pos'); ?> <span class="total-pages" id="total-pages">1</span></span>
                     </span>
-                    <a class="next-page button" id="next-page"><span class="screen-reader-text"><?php _e('Pu00e1gina siguiente', 'wp-pos'); ?></span><span aria-hidden="true">&rsaquo;</span></a>
-                    <a class="last-page button" id="last-page"><span class="screen-reader-text"><?php _e('u00daltima pu00e1gina', 'wp-pos'); ?></span><span aria-hidden="true">&raquo;</span></a>
+                    <a class="next-page button" id="next-page"><span class="screen-reader-text"><?php _e('Pagina siguiente', 'wp-pos'); ?></span><span aria-hidden="true">&rsaquo;</span></a>
+                    <a class="last-page button" id="last-page"><span class="screen-reader-text"><?php _e('Ultima Pagina', 'wp-pos'); ?></span><span aria-hidden="true">&raquo;</span></a>
                 </span>
             </div>
         </div>
@@ -469,19 +468,19 @@ jQuery(document).ready(function($) {
                     renderClosuresList(data.closures);
                     updatePagination(data.total_items, data.total_pages);
                 } else {
-                    $('#closures-list').html('<tr><td colspan="9" class="no-items"><?php _e("Error al cargar los datos", "wp-pos"); ?>: ' + response.data.message + '</td></tr>');
+                    $('#closures-list').html('<tr><td colspan="8" class="no-items"><?php _e("Error al cargar los datos", "wp-pos"); ?>: ' + response.data.message + '</td></tr>');
                 }
             },
             error: function() {
-                $('#closures-list').html('<tr><td colspan="9" class="no-items"><?php _e("Error de conexi\u00f3n al cargar los datos", "wp-pos"); ?></td></tr>');
+                $('#closures-list').html('<tr><td colspan="8" class="no-items"><?php _e("Error de conexi\u00f3n al cargar los datos", "wp-pos"); ?></td></tr>');
             }
         });
     }
     
-    // Funciu00f3n para renderizar la lista de cierres
-    function renderClosuresList(closures) {
+    // Funciu00f3n para renderizar la lista de cierres - expuesta globalmente
+    window.renderClosuresList = function(closures) {
         if (!closures || closures.length === 0) {
-            $('#closures-list').html('<tr><td colspan="9" class="no-items"><?php _e("No se encontraron cierres de caja", "wp-pos"); ?></td></tr>');
+            $('#closures-list').html('<tr><td colspan="8" class="no-items"><?php _e("No se encontraron cierres de caja", "wp-pos"); ?></td></tr>');
             return;
         }
         
@@ -757,7 +756,7 @@ jQuery(document).ready(function($) {
     var originalRenderFunction = renderClosuresList;
     renderClosuresList = function(closures) {
         if (!closures || closures.length === 0) {
-            $('#closures-list').html('<tr><td colspan="9" class="no-items">No se encontraron cierres de caja</td></tr>');
+            $('#closures-list').html('<tr><td colspan="8" class="no-items">No se encontraron cierres de caja</td></tr>');
             return;
         }
         
@@ -780,7 +779,7 @@ jQuery(document).ready(function($) {
     // Sobrescribir el comportamiento de cargar la lista para reiniciar cache
     var originalLoadFunction = loadClosuresList;
     loadClosuresList = function() {
-        // Reiniciar cache al cambiar pu00e1gina o filtros
+        // Reiniciar cache al cambiar Pagina o filtros
         displayedClosureIds = {};
         // Llamar a la funciu00f3n original
         originalLoadFunction.apply(this, arguments);

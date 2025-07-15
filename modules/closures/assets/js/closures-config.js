@@ -21,13 +21,13 @@ window.WP_POS_CONFIG = window.WP_POS_CONFIG || {};
 // ========================================
 // CÁLCULO AUTOMÁTICO INICIAL
 // ========================================
-window.WP_POS_CONFIG.autoCalculate = true;        // true = habilitar, false = deshabilitar
+window.WP_POS_CONFIG.autoCalculate = false;       // DESACTIVADO para evitar recargas automáticas
 window.WP_POS_CONFIG.autoCalculateDelay = 1000;   // Delay en milisegundos (1000 = 1 segundo)
 
 // ========================================
 // LIMPIEZA AUTOMÁTICA DE INDICADORES
 // ========================================
-window.WP_POS_CONFIG.autoCleanup = true;          // true = habilitar, false = deshabilitar
+window.WP_POS_CONFIG.autoCleanup = false;         // DESACTIVADO para evitar recargas automáticas
 window.WP_POS_CONFIG.cleanupInterval = 30000;     // Intervalo en milisegundos (30000 = 30 segundos)
 
 // ========================================
@@ -42,6 +42,7 @@ window.WP_POS_CONFIG.debugMode = false;           // true = mostrar logs detalla
  */
 
 // PRESET 1: Modo Silencioso (Sin actualizaciones automáticas)
+// YA APLICADO - Configuración actual en modo silencioso
 // window.WP_POS_CONFIG.autoCalculate = false;
 // window.WP_POS_CONFIG.autoCleanup = false;
 
